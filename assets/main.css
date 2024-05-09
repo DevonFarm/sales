@@ -1,0 +1,36 @@
+@font-face {
+  font-family: "Teachers";
+  src: url("/assets/fonts/Teachers/Teachers-VariableFont_wght.ttf")
+    format("truetype supports variations")
+    url("/assets/fonts/Teachers/Teachers-VariableFont_wght.ttf")
+    format("truetype-variations");
+  font-weight: 400 800;
+}
+@font-face {
+  font-family: "Teachers";
+  src: url("/assets/fonts/Teachers/Teachers-Italic-VariableFont_wght.ttf")
+    format("truetype supports variations")
+    url("/assets/fonts/Teachers/Teachers-Italic-VariableFont_wght.ttf")
+    format("truetype-variations");
+  font-weight: 400 800;
+  font-style: italic;
+}
+
+:root {
+  --font-fallback: Roboto, Arial, Helvetica, "Helvetica Neue", sans-serif;
+  --teachers-font: Teachers, var(--font-fallback);
+}
+
+body {
+  font-family: var(--teachers-font);
+}
+
+h2 {
+  margin: 1rem auto;
+  font-size: 2.2rem;
+  font-weight: 500;
+}
+
+.desc {
+  font-style: italic;
+}
