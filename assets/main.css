@@ -42,10 +42,22 @@ h2 {
   display: flex;
 }
 
+#search {
+  display: flex;
+  flex-direction: column;
+  flex-basis: 100%;
+  flex: 1;
+}
+
 #search input {
-  /* TODO: search box styling */
+  min-width: 300px;
+  max-width: 500px;
+  margin: auto;
 }
 
 #search button {
-  /* TODO */
+  margin: 1rem auto;
+  min-width: 180px;
+  max-width: 300px;
+  font-weight: bold;
 }
