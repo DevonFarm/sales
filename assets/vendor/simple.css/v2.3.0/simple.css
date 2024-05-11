@@ -169,22 +169,26 @@ h3 {
   line-height: 1.1;
 }
 
-/* Reduce header size on mobile */
+/* Reduce text size on mobile */
 @media only screen and (max-width: 720px) {
   h1 {
     font-size: 2.5rem;
   }
 
   h2 {
-    font-size: 2.1rem;
+    font-size: 1.8rem;
   }
 
   h3 {
-    font-size: 1.75rem;
+    font-size: 1.5rem;
   }
 
   h4 {
     font-size: 1.25rem;
+  }
+
+  p {
+    font-size: 1rem;
   }
 }
 
@@ -258,15 +262,16 @@ input:enabled:focus-visible:where(
 }
 
 /* Format navigation */
-header > nav {
+nav {
   font-size: 1rem;
   line-height: 2;
   padding: 1rem 0 0 0;
 }
 
 /* Use flexbox to allow items to wrap, as needed */
-header > nav ul,
-header > nav ol {
+nav ul,
+nav ol,
+nav {
   align-content: space-around;
   align-items: center;
   display: flex;
@@ -279,13 +284,13 @@ header > nav ol {
 }
 
 /* List items are inline elements, make them behave more like blocks */
-header > nav ul li,
-header > nav ol li {
+nav ul li,
+nav ol li {
   display: inline-block;
 }
 
-header > nav a,
-header > nav a:visited {
+nav a,
+nav a:visited {
   margin: 0 0.5rem 1rem 0.5rem;
   border: 1px solid var(--border);
   border-radius: var(--standard-border-radius);
@@ -295,9 +300,9 @@ header > nav a:visited {
   text-decoration: none;
 }
 
-header > nav a:hover,
-header > nav a.current,
-header > nav a[aria-current="page"] {
+nav a:hover,
+nav a.current,
+nav a[aria-current="page"] {
   border-color: var(--accent);
   color: var(--accent);
   cursor: pointer;
@@ -305,11 +310,12 @@ header > nav a[aria-current="page"] {
 
 /* Reduce nav side on mobile */
 @media only screen and (max-width: 720px) {
-  header > nav a {
-    border: none;
+  nav a {
+    /* border: none;
     padding: 0;
-    text-decoration: underline;
-    line-height: 1;
+    text-decoration: underline; */
+    padding: 0.1rem 0.5rem;
+    line-height: 1.5;
   }
 }
 
