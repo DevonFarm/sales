@@ -15,7 +15,7 @@
   --text-light: #585858;
   --border: #898ea4;
   --accent: #187795;
-  --accent-hover: #1266e2;
+  --accent-hover: #1f9bc1;
   --accent-text: var(--bg);
   --code: #d81b60;
   --preformatted: #444;
@@ -33,7 +33,7 @@
     --text: #dcdcdc;
     --text-light: #ababab;
     --accent: #50808e;
-    --accent-hover: #ffe099;
+    --accent-hover: #6297a7;
     --accent-text: var(--bg);
     --code: #f06292;
     --preformatted: #ccc;
