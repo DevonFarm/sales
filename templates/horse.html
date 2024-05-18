@@ -1,0 +1,28 @@
+<!-- TODO: styling and JS for image gallery -->
+{{ template "head" }}
+<script>
+
+</script>
+{{ template "header" }}
+<main>
+	<h1>{{ .Name }}</h1>
+	<div class="gallery">
+		{{ range $img := .Images }}
+		<div class="slide">
+			<img src="{{ $img.Full }}" alt="{{ $img.Alt }}">
+		</div>
+		{{ end }}
+		<div class="arrows">
+			<a class="prev" onclick="nextSlide(-1)">
+				<p>&#x279C;</p>
+			</a>
+			<a class="next" onclick="nextSlide(1)">&#x279C;</a>
+		</div>
+		{{ range $idx, $img := .Images }}
+		<div class="thumbnails">
+			<img src="{{ $img.Thumbnail }}" alt="{{ $img.Alt }}" onclick="currentSlide('{{ $idx }}')">
+		</div>
+		{{ end }}
+	</div>
+</main>
+{{ template "end" }}
