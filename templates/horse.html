@@ -1,7 +1,19 @@
 <!-- TODO: styling and JS for image gallery -->
 {{ template "head" }}
 <script>
+	let slideIndex = 0
 
+	function showSlides(idx = 0) {
+		const slides = document.getElementsByClassName("slide")
+		const thumbnails = document.getElementsByClassName("thumbnail")
+		const lastIdx = slides.length - 1
+		if (idx > lastIdx) {
+			slideIndex = 0
+		} else if (idx < 0) {
+			slideIndex = lastIdx
+		}
+		// TODO: finish showSlides
+	}
 </script>
 {{ template "header" }}
 <main>
@@ -19,7 +31,7 @@
 			<a class="next" onclick="nextSlide(1)">&#x279C;</a>
 		</div>
 		{{ range $idx, $img := .Images }}
-		<div class="thumbnails">
+		<div class="thumbnail">
 			<img src="{{ $img.Thumbnail }}" alt="{{ $img.Alt }}" onclick="currentSlide('{{ $idx }}')">
 		</div>
 		{{ end }}
