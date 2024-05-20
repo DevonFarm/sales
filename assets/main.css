@@ -78,6 +78,26 @@ button {
   display: none;
 }
 
+.active-slide {
+  display: block;
+}
+
+.thumbs {
+  display: flex;
+  flex-direction: row;
+  column-gap: 5px;
+  overflow-x: auto;
+}
+
+.thumb {
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+.active-thumb {
+  opacity: 1;
+}
+
 .prev p {
   transform: rotate(180deg);
   display: inline-block;

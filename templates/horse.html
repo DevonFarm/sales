@@ -2,17 +2,37 @@
 {{ template "head" }}
 <script>
 	let slideIndex = 0
+	let prevSlideIndex = -1
+	document.addEventListener("DOMContentLoaded", e => {
+		showSlide(slideIndex)
+	})
 
-	function showSlides(idx = 0) {
+	function showSlide(idx = 0) {
 		const slides = document.getElementsByClassName("slide")
-		const thumbnails = document.getElementsByClassName("thumbnail")
+		const thumbnails = document.getElementsByClassName("thumb")
 		const lastIdx = slides.length - 1
+		prevSlideIndex = slideIndex
 		if (idx > lastIdx) {
 			slideIndex = 0
 		} else if (idx < 0) {
 			slideIndex = lastIdx
 		}
-		// TODO: finish showSlides
+		// TODO: fix error `slides[prevSlideIndex] is undefined`
+		// looks like prevSlideIndex got out of range (7??)
+		slides[prevSlideIndex].classList.remove("active-slide")
+		slides[slideIndex].classList.add("active-slide")
+		thumbnails[prevSlideIndex].classList.remove("active-thumb")
+		thumbnails[slideIndex].classList.add("active-thumb")
+		// TODO: if thumbnails[slideIndex] is not scrolled into view,
+		// scroll horizontally to get it in view
+	}
+
+	function nextSlide(n = 1) {
+		showSlide(slideIndex += n)
+	}
+
+	function setSlide(n = 0) {
+		showSlide(n)
 	}
 </script>
 {{ template "header" }}
@@ -30,11 +50,14 @@
 			</a>
 			<a class="next" onclick="nextSlide(1)">&#x279C;</a>
 		</div>
-		{{ range $idx, $img := .Images }}
-		<div class="thumbnail">
-			<img src="{{ $img.Thumbnail }}" alt="{{ $img.Alt }}" onclick="currentSlide('{{ $idx }}')">
+		<div class="thumbs">
+			{{ range $idx, $img := .Images }}
+			<div class="thumb">
+				<!-- TODO: enable click events on thumbnails -->
+				<img src="{{ $img.Thumbnail }}" alt="{{ $img.Alt }}" onclick="setSlide('{{ $idx }}')">
+			</div>
+			{{ end }}
 		</div>
-		{{ end }}
 	</div>
 </main>
 {{ template "end" }}

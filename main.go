@@ -89,6 +89,21 @@ func buildHorses(tmplGlob *template.Template, outDir string) error {
 		"link_trotting_thumb.jpeg",
 		"A silver bay Gypsian colt trotting in a field",
 	)
+	horse.NewImage(
+		"link_standing.jpeg",
+		"link_standing_thumb.jpeg",
+		"A silver bay Gypsian colt standing in a field",
+	)
+	horse.NewImage(
+		"link_stepping.jpeg",
+		"link_stepping_thumb.jpeg",
+		"A silver bay Gypsian colt, appearing to step near a Norwegian Fjord mare with her ears pinned",
+	)
+	horse.NewImage(
+		"link_trotting.jpeg",
+		"link_trotting_thumb.jpeg",
+		"A silver bay Gypsian colt trotting in a field",
+	)
 	filename := horse.HTMLPath()
 	f, err := os.Create(fmt.Sprintf("%s/%s", outDir, filename))
 	if err != nil {
