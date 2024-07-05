@@ -98,7 +98,23 @@ button {
   opacity: 1;
 }
 
-.prev p {
+.arrows {
+  margin: 0 0 0.4rem;
+  text-align: center;
+  line-height: 1;
+}
+
+.arrows a {
+  font-size: 4rem;
+  margin: 0 2rem;
+  color: var(--arrows);
+}
+
+.arrows a:hover {
+  cursor: pointer;
+}
+
+.prev {
   transform: rotate(180deg);
   display: inline-block;
 }

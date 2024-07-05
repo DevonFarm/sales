@@ -46,16 +46,13 @@
 			<img src="{{ $img.Full }}" alt="{{ $img.Alt }}">
 		</div>
 		{{ end }}
-		<div class="arrows">
-			<a class="prev" onclick="nextSlide(-1)">
-				<p>&#x279C;</p>
-			</a>
+		<p class="arrows">
+			<a class="prev" onclick="nextSlide(-1)">&#x279C;</a>
 			<a class="next" onclick="nextSlide(1)">&#x279C;</a>
-		</div>
+		</p>
 		<div class="thumbs">
 			{{ range $idx, $img := .Images }}
 			<div class="thumb">
-				<!-- TODO: enable click events on thumbnails -->
 				<img src="{{ $img.Thumbnail }}" alt="{{ $img.Alt }}" onclick="setSlide('{{ $idx }}')">
 			</div>
 			{{ end }}
