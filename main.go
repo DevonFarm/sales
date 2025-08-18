@@ -49,6 +49,7 @@ func run() error {
 		addr := ":4242"
 		fs := http.FileServer(http.Dir("./output"))
 		http.Handle("/", fs)
+		fmt.Println("Starting dev server on", addr)
 		if err := http.ListenAndServe(addr, nil); err != nil {
 			return fmt.Errorf("failed to run dev server: %w", err)
 		}
