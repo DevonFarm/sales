@@ -8,8 +8,9 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/iancoleman/strcase"
 	"github.com/otiai10/copy"
+
+	"github.com/DevonFarm/sales/horse"
 )
 
 // builds static content
@@ -69,77 +70,49 @@ func buildHorses(tmplGlob *template.Template, outDir string) error {
 	}
 
 	// temporary hardcoded horse
-	horse := Horse{Name: "Link"}
-	horse.NewImage(
+	h := horse.Horse{Name: "Link"}
+	h.NewImage(
 		"link_headshot.jpeg",
 		"link_headshot_thumb.jpeg",
 		"Headshot of a silver bay Gypsian colt",
 	)
-	horse.NewImage(
+	h.NewImage(
 		"link_standing.jpeg",
 		"link_standing_thumb.jpeg",
 		"A silver bay Gypsian colt standing in a field",
 	)
-	horse.NewImage(
+	h.NewImage(
 		"link_stepping.jpeg",
 		"link_stepping_thumb.jpeg",
 		"A silver bay Gypsian colt, appearing to step near a Norwegian Fjord mare with her ears pinned",
 	)
-	horse.NewImage(
+	h.NewImage(
 		"link_trotting.jpeg",
 		"link_trotting_thumb.jpeg",
 		"A silver bay Gypsian colt trotting in a field",
 	)
-	horse.NewImage(
+	h.NewImage(
 		"link_standing.jpeg",
 		"link_standing_thumb.jpeg",
 		"A silver bay Gypsian colt standing in a field",
 	)
-	horse.NewImage(
+	h.NewImage(
 		"link_stepping.jpeg",
 		"link_stepping_thumb.jpeg",
 		"A silver bay Gypsian colt, appearing to step near a Norwegian Fjord mare with her ears pinned",
 	)
-	horse.NewImage(
+	h.NewImage(
 		"link_trotting.jpeg",
 		"link_trotting_thumb.jpeg",
 		"A silver bay Gypsian colt trotting in a field",
 	)
-	filename := horse.HTMLPath()
+	filename := h.HTMLPath()
 	f, err := os.Create(fmt.Sprintf("%s/%s", outDir, filename))
 	if err != nil {
 		return fmt.Errorf("failed to create %s: %w", filename, err)
 	}
-	if err := tmplGlob.ExecuteTemplate(f, "horse.html", horse); err != nil {
+	if err := tmplGlob.ExecuteTemplate(f, "horse.html", h); err != nil {
 		return fmt.Errorf("failed to execute horse template: %w", err)
 	}
 	return nil
-}
-
-type Horse struct {
-	Name   string
-	Images []*Image
-}
-
-func (h *Horse) HTMLPath() string {
-	return fmt.Sprintf("%s.html", strcase.ToSnake(h.Name))
-}
-
-func (h *Horse) NewImage(full, thumbnail, alt string) {
-	prefix := fmt.Sprintf("assets/images/horses/%s", h.Name)
-	img := &Image{
-		Full:      fmt.Sprintf("%s/%s", prefix, full),
-		Thumbnail: fmt.Sprintf("%s/%s", prefix, thumbnail),
-		Alt:       alt,
-	}
-	if h.Images == nil {
-		h.Images = make([]*Image, 0)
-	}
-	h.Images = append(h.Images, img)
-}
-
-type Image struct {
-	Full      string
-	Alt       string
-	Thumbnail string
 }
