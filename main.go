@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"html/template"
@@ -8,8 +9,10 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/joho/godotenv"
 	"github.com/otiai10/copy"
 
+	"github.com/DevonFarm/sales/database"
 	"github.com/DevonFarm/sales/horse"
 )
 
@@ -47,19 +50,52 @@ func run() error {
 	}
 	flag.Parse()
 	if dev {
-		addr := ":4242"
-		fs := http.FileServer(http.Dir("./output"))
-		http.Handle("/", fs)
-		fmt.Println("Starting dev server on", addr)
-		if err := http.ListenAndServe(addr, nil); err != nil {
-			return fmt.Errorf("failed to run dev server: %w", err)
+		if err := runHTTPServer(); err != nil {
+			return fmt.Errorf("failed to run HTTP server: %w", err)
 		}
 	}
 	return nil
 }
 
+func runHTTPServer() error {
+	addr := ":4242"
+	fs := http.FileServer(http.Dir("./output"))
+	http.Handle("/", fs)
+	fmt.Println("Starting HTTP server on", addr)
+	if err := http.ListenAndServe(addr, nil); err != nil {
+		return fmt.Errorf("failed to run HTTP server: %w", err)
+	}
+	return nil
+}
+
+func runAPI() error {
+	if err := godotenv.Load(); err != nil {
+		return fmt.Errorf("failed to load .env: %w", err)
+	}
+	connString := os.Getenv("COCKROACH_DSN")
+	if connString == "" {
+		return fmt.Errorf("missing COCKROACH_DSN env var")
+	}
+	db, err := database.NewDBConn(connString)
+	if err != nil {
+		return fmt.Errorf("failed to connect to db: %w", err)
+	}
+	defer db.Close(context.Background())
+
+	// h := horse.NewHorse(
+	// 	"Test Horse",
+	// 	"A horse used for testing",
+	// 	time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC),
+	// 	horse.GenderStallion,
+	// )
+	// if err := h.Save(context.Background(), db); err != nil {
+	// 	return fmt.Errorf("failed to save horse: %w", err)
+	// }
+	return runHTTPServer()
+}
+
 func main() {
-	if err := run(); err != nil {
+	if err := runAPI(); err != nil {
 		log.Fatal(err)
 	}
 }
