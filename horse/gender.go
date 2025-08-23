@@ -12,9 +12,9 @@ const (
 // A horse is a filly or colt when they are less than 4 years old
 const maxYouthAge = 3
 
-func (h *Horse) Gender() string {
+func (h *Horse) GenderString() string {
 	isYouth := h.Age() < maxYouthAge
-	switch h.gender {
+	switch h.Gender {
 	case GenderStallion:
 		if isYouth {
 			return "Colt"

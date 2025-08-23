@@ -12,12 +12,12 @@ import (
 )
 
 type Horse struct {
-	ID          uuid.UUID
-	Name        string
-	Description string
+	ID          uuid.UUID `db:"id"`
+	Name        string    `db:"name"`
+	Description string    `db:"description"`
 	Images      []*Image
-	DateOfBirth time.Time
-	gender      Gender
+	DateOfBirth time.Time `db:"date_of_birth"`
+	Gender      Gender    `db:"gender"`
 }
 
 func (h *Horse) Age() int {
@@ -46,7 +46,7 @@ func NewHorse(name string, desc string, dob time.Time, g Gender) *Horse {
 		Name:        name,
 		Description: desc,
 		DateOfBirth: dob,
-		gender:      g,
+		Gender:      g,
 	}
 }
 
@@ -56,7 +56,7 @@ func (h *Horse) Save(ctx context.Context, db *database.DB) error {
 		`INSERT INTO horses (name, description, date_of_birth, gender) 
 		VALUES ($1, $2, $3, $4)
 		RETURNING id`,
-		h.Name, h.Description, h.DateOfBirth, h.gender,
+		h.Name, h.Description, h.DateOfBirth, h.Gender,
 	)
 	if err := row.Scan(&h.ID); err != nil {
 		return fmt.Errorf("failed to scan horse id: %w", err)
