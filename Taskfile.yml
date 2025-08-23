@@ -1,0 +1,17 @@
+# https://taskfile.dev
+
+version: "3"
+
+vars:
+  GREETING: Hello, World!
+
+tasks:
+  default:
+    cmds:
+      - echo "{{.GREETING}}"
+    silent: true
+  db-migrate:
+    cmds:
+      - echo "Running db migrations..."
+      - COCKROACH_DSN="$(grep COCKROACH_DSN .env | cut -d '=' -f2- | tr -d '"')"
+      - migrate -database "${COCKROACH_DSN}" -path ./db/migrations up
