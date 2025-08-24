@@ -27,6 +27,11 @@ tasks:
         URL="https://cockroachlabs.cloud/clusters/$COCKROACH_CLUSTER_ID/cert"
         echo "URL=$URL"
         curl --create-dirs -o "$HOME/.postgresql/root.crt" "$URL"
+  install-go-migrate:
+    desc: "Install go-migrate"
+    cmds:
+      - echo "Installing go-migrate..."
+      - go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
   db-migrate:
     desc: "Run database migrations"
     cmds:
@@ -36,4 +41,5 @@ tasks:
           echo "Error: COCKROACH_DSN environment variable is not set"
           exit 1
         fi
+        echo "COCKROACH_DSN=$COCKROACH_DSN"
         migrate -database "${COCKROACH_DSN}" -path ./db/migrations up
