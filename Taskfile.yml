@@ -31,5 +31,9 @@ tasks:
     desc: "Run database migrations"
     cmds:
       - echo "Running db migrations..."
-      # - COCKROACH_DSN="$(grep COCKROACH_DSN .env | cut -d '=' -f2- | tr -d '"')"
-      - migrate -database "${COCKROACH_DSN}" -path ./db/migrations up
+      - |
+        if [ -z "$COCKROACH_DSN" ]; then
+          echo "Error: COCKROACH_DSN environment variable is not set"
+          exit 1
+        fi
+        migrate -database "${COCKROACH_DSN}" -path ./db/migrations up
