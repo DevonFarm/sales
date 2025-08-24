@@ -6,5 +6,8 @@ onBoot = "task setup"
 channel = "stable-25_05"
 packages = ["go-migrate", "jq", "go-task"]
 
+[env]
+PATH = "$PATH:/your/custom/directory"
+
 [deployment]
 run = ["sh", "-c", "go build -o bin/main && ./bin/main"]
