@@ -1,5 +1,6 @@
 modules = ["go-1.21", "web"]
 run = "go build -o bin/main . && ./bin/main"
+onBoot = "task setup-cert"
 
 [nix]
 channel = "stable-25_05"
