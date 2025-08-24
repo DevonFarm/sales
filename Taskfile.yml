@@ -7,11 +7,13 @@ vars:
 
 tasks:
   default:
+    desc: "Greet the world"
     cmds:
       - echo "{{.GREETING}}"
     silent: true
   db-migrate:
+    desc: "Run database migrations"
     cmds:
       - echo "Running db migrations..."
-      - COCKROACH_DSN="$(grep COCKROACH_DSN .env | cut -d '=' -f2- | tr -d '"')"
+      # - COCKROACH_DSN="$(grep COCKROACH_DSN .env | cut -d '=' -f2- | tr -d '"')"
       - migrate -database "${COCKROACH_DSN}" -path ./db/migrations up
