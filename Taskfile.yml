@@ -15,6 +15,7 @@ tasks:
     desc: "Setup the project workspace"
     cmds:
       - task: install-db-cert
+      - task: install-go-migrate
   install-db-cert:
     desc: "Install the CockroachDB certificate"
     cmds:
@@ -31,7 +32,7 @@ tasks:
     desc: "Install go-migrate"
     cmds:
       - echo "Installing go-migrate..."
-      - go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+      - go install -tags 'postgres,cockroachdb' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
   db-migrate:
     desc: "Run database migrations"
     cmds:
