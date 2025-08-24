@@ -1,0 +1,8 @@
+modules = ["go-1.21", "web"]
+run = "go build -o bin/main . && ./bin/main"
+
+[nix]
+channel = "stable-25_05"
+
+[deployment]
+run = ["sh", "-c", "go build -o bin/main && ./bin/main"]
