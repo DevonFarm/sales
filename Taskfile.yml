@@ -5,9 +5,6 @@ version: "3"
 vars:
   GREETING: Hello, World!
 
-env:
-  COCKROACH_CLUSTER_ID: "{{.COCKROACH_CLUSTER_ID}}"
-
 tasks:
   default:
     desc: "Greet the world"
@@ -22,9 +19,14 @@ tasks:
     desc: "Install the CockroachDB certificate"
     cmds:
       - echo "Installing the CockroachDB certificate..."
-      - export URL="'https://cockroachlabs.cloud/clusters/${COCKROACH_CLUSTER_ID}/cert'"
-      - echo "URL=${URL}"
-      - curl --create-dirs -o "$HOME/.postgresql/root.crt" "${URL}"
+      - |
+        if [ -z "$COCKROACH_CLUSTER_ID" ]; then
+          echo "Error: COCKROACH_CLUSTER_ID environment variable is not set"
+          exit 1
+        fi
+        URL="https://cockroachlabs.cloud/clusters/$COCKROACH_CLUSTER_ID/cert"
+        echo "URL=$URL"
+        curl --create-dirs -o "$HOME/.postgresql/root.crt" "$URL"
   db-migrate:
     desc: "Run database migrations"
     cmds:
