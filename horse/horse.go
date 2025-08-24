@@ -12,12 +12,12 @@ import (
 )
 
 type Horse struct {
-	ID          uuid.UUID `db:"id"`
-	Name        string    `db:"name"`
-	Description string    `db:"description"`
+	ID          uuid.UUID `db:"id" form:"id"`
+	Name        string    `db:"name" form:"name"`
+	Description string    `db:"description" form:"description"`
 	Images      []*Image
-	DateOfBirth time.Time `db:"date_of_birth"`
-	Gender      Gender    `db:"gender"`
+	DateOfBirth time.Time `db:"date_of_birth" form:"date_of_birth"`
+	Gender      Gender    `db:"gender" form:"gender"`
 }
 
 func (h *Horse) Age() int {
@@ -51,6 +51,10 @@ func NewHorse(name string, desc string, dob time.Time, g Gender) *Horse {
 }
 
 func (h *Horse) Save(ctx context.Context, db *database.DB) error {
+	// Validate horse data
+	if h.Gender.IsInvalid() {
+		return fmt.Errorf("invalid horse gender: %d", h.Gender)
+	}
 	row := db.QueryRow(
 		ctx,
 		`INSERT INTO horses (name, description, date_of_birth, gender) 

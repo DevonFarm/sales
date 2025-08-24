@@ -9,6 +9,12 @@ const (
 	GenderMare
 )
 
+var ValidGenders = []Gender{GenderStallion, GenderGelding, GenderMare}
+
+func (g Gender) IsInvalid() bool {
+	return g < 1 || int(g) > len(ValidGenders)
+}
+
 // A horse is a filly or colt when they are less than 4 years old
 const maxYouthAge = 3
 

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
 	"github.com/otiai10/copy"
 
@@ -82,6 +83,9 @@ func runAPI() error {
 	}
 	defer db.Close(context.Background())
 
+	app := fiber.New()
+	horse.Routes(app, db)
+
 	// h := horse.NewHorse(
 	// 	"Test Horse",
 	// 	"A horse used for testing",
@@ -91,7 +95,7 @@ func runAPI() error {
 	// if err := h.Save(context.Background(), db); err != nil {
 	// 	return fmt.Errorf("failed to save horse: %w", err)
 	// }
-	return runHTTPServer()
+	return app.Listen(":4242")
 }
 
 func main() {
