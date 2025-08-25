@@ -1,3 +1,5 @@
+{{ template "head" }}
+{{ template "header" }}
 <form action="/horses" method="post" enctype="multipart/form-data">
   <label for="name">Name<span style="color: red">*</span>:</label>
   <input type="text" id="name" name="name" required /><br /><br />
@@ -34,3 +36,4 @@
 
   <button type="submit">Create Horse</button>
 </form>
+{{ template "end" }}

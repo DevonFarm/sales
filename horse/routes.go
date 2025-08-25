@@ -35,7 +35,7 @@ func createHorse(db *database.DB) func(*fiber.Ctx) error {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 		}
 		h.Save(c.Context(), db)
-		return c.SendStatus(fiber.StatusNotImplemented)
+		return c.SendStatus(fiber.StatusCreated)
 	}
 }
 
