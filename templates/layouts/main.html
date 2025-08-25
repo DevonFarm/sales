@@ -1,0 +1,29 @@
+
+{{ define "main" }}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>{{ if .Title }}{{ .Title }} | {{ end }} Devon Farm</title>
+	<link rel="stylesheet" href="/assets/vendor/simple.css/v2.3.0/simple.css">
+	<link rel="stylesheet" href="/assets/main.css">
+</head>
+
+<body>
+	<header>
+		<h1>Devon Farm</h1>
+		<h2>Quality Feathered Horses</h2>
+		<form action="" method="get" id="search">
+			<input type="text" name="query" id="query">
+			<button type="submit">Search</button>
+		</form>
+	</header>
+
+	{{ embed }}
+
+</body>
+
+</html>
+{{ end }}
