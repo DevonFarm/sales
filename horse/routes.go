@@ -2,6 +2,7 @@ package horse
 
 import (
 	"github.com/DevonFarm/sales/database"
+	"github.com/DevonFarm/sales/utils"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -39,6 +40,14 @@ func createHorse(db *database.DB) func(*fiber.Ctx) error {
 		var h Horse
 		if err := c.BodyParser(&h); err != nil {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		}
+		dateStr := c.FormValue("date_of_birth")
+		if dateStr != "" {
+			dob, err := utils.ParseDate(dateStr)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+			}
+			h.DateOfBirth = dob
 		}
 		h.Save(c.Context(), db)
 		return c.SendStatus(fiber.StatusCreated)

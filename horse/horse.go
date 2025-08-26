@@ -16,7 +16,7 @@ type Horse struct {
 	Name        string    `db:"name" form:"name"`
 	Description string    `db:"description" form:"description"`
 	Images      []*Image
-	DateOfBirth time.Time `db:"date_of_birth" form:"date_of_birth"`
+	DateOfBirth time.Time `db:"date_of_birth" form:"-"`
 	Gender      Gender    `db:"gender" form:"gender"`
 }
 
