@@ -89,14 +89,15 @@ func runAPI() error {
 	}
 	defer db.Close(context.Background())
 
-	engine := html.NewFileSystem(http.FS(templates), ".html")
+	fs := http.FS(templates)
+	engine := html.NewFileSystem(fs, ".html")
 	app := fiber.New(fiber.Config{
 		Views: engine,
 	})
 
 	// Serve static assets from embedded filesystem
 	app.Use("/assets", filesystem.New(filesystem.Config{
-		Root: http.FS(templates),
+		Root:       fs,
 		PathPrefix: "assets",
 	}))
 
