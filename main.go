@@ -12,6 +12,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/filesystem"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/template/html/v2"
 	"github.com/joho/godotenv"
 	"github.com/otiai10/copy"
@@ -76,9 +77,7 @@ func runHTTPServer() error {
 }
 
 func runAPI() error {
-	if err := godotenv.Load(); err != nil {
-		log.Printf("failed to load .env: %v", err)
-	}
+	godotenv.Load()
 	connString := os.Getenv("COCKROACH_DSN")
 	if connString == "" {
 		return fmt.Errorf("missing COCKROACH_DSN env var")
@@ -94,6 +93,7 @@ func runAPI() error {
 	app := fiber.New(fiber.Config{
 		Views: engine,
 	})
+	app.Use(logger.New())
 
 	// Serve static assets from embedded filesystem
 	app.Use("/assets", filesystem.New(filesystem.Config{
@@ -102,16 +102,6 @@ func runAPI() error {
 	}))
 
 	horse.Routes(app, db)
-
-	// h := horse.NewHorse(
-	// 	"Test Horse",
-	// 	"A horse used for testing",
-	// 	time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC),
-	// 	horse.GenderStallion,
-	// )
-	// if err := h.Save(context.Background(), db); err != nil {
-	// 	return fmt.Errorf("failed to save horse: %w", err)
-	// }
 	return app.Listen(":4242")
 }
 
