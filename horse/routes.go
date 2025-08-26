@@ -14,7 +14,7 @@ func Routes(app *fiber.App, db *database.DB) {
 	app.Delete("/horses/:id", deleteHorse(db))
 
 	app.Get("/list", func(c *fiber.Ctx) error {
-		return c.Render("templates/create.html", fiber.Map{
+		return c.Render("templates/create", fiber.Map{
 			"Title": "Listing",
 		})
 	})

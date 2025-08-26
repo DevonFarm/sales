@@ -11,3 +11,7 @@ PATH = "$HOME/go/bin:$PATH"
 
 [deployment]
 run = ["sh", "-c", "go build -o bin/main && ./bin/main"]
+
+[[ports]]
+localPort = 4242
+externalPort = 80

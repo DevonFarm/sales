@@ -19,7 +19,7 @@ import (
 	"github.com/DevonFarm/sales/horse"
 )
 
-//go:embed templates
+//go:embed templates assets
 var templates embed.FS
 
 // builds static content
