@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"embed"
 	"flag"
 	"fmt"
 	"html/template"
@@ -10,12 +11,16 @@ import (
 	"os"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/template/html/v2"
 	"github.com/joho/godotenv"
 	"github.com/otiai10/copy"
 
 	"github.com/DevonFarm/sales/database"
 	"github.com/DevonFarm/sales/horse"
 )
+
+//go:embed templates
+var templates embed.FS
 
 // builds static content
 func build() error {
@@ -71,7 +76,7 @@ func runHTTPServer() error {
 
 func runAPI() error {
 	if err := godotenv.Load(); err != nil {
-		return fmt.Errorf("failed to load .env: %w", err)
+		log.Printf("failed to load .env: %v", err)
 	}
 	connString := os.Getenv("COCKROACH_DSN")
 	if connString == "" {
@@ -83,7 +88,10 @@ func runAPI() error {
 	}
 	defer db.Close(context.Background())
 
-	app := fiber.New()
+	engine := html.NewFileSystem(http.FS(templates), ".html")
+	app := fiber.New(fiber.Config{
+		Views: engine,
+	})
 	horse.Routes(app, db)
 
 	// h := horse.NewHorse(

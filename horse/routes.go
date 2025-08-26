@@ -12,6 +12,12 @@ func Routes(app *fiber.App, db *database.DB) {
 	app.Post("/horses", createHorse(db))
 	app.Put("/horses/:id", updateHorse(db))
 	app.Delete("/horses/:id", deleteHorse(db))
+
+	app.Get("/list", func(c *fiber.Ctx) error {
+		return c.Render("templates/create.html", fiber.Map{
+			"Title": "Listing",
+		})
+	})
 }
 
 func getHorses(db *database.DB) func(*fiber.Ctx) error {
