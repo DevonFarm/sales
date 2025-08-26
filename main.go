@@ -11,6 +11,7 @@ import (
 	"os"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/filesystem"
 	"github.com/gofiber/template/html/v2"
 	"github.com/joho/godotenv"
 	"github.com/otiai10/copy"
@@ -92,6 +93,13 @@ func runAPI() error {
 	app := fiber.New(fiber.Config{
 		Views: engine,
 	})
+
+	// Serve static assets from embedded filesystem
+	app.Use("/assets", filesystem.New(filesystem.Config{
+		Root: http.FS(templates),
+		PathPrefix: "assets",
+	}))
+
 	horse.Routes(app, db)
 
 	// h := horse.NewHorse(
