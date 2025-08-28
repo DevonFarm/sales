@@ -14,6 +14,7 @@ import (
 	"github.com/gofiber/template/html/v2"
 	"github.com/joho/godotenv"
 
+	"github.com/DevonFarm/sales/auth"
 	"github.com/DevonFarm/sales/database"
 	"github.com/DevonFarm/sales/horse"
 )
@@ -36,7 +37,8 @@ func runServer() error {
 	fs := http.FS(templates)
 	engine := html.NewFileSystem(fs, ".html")
 	app := fiber.New(fiber.Config{
-		Views: engine,
+		Views:       engine,
+		ViewsLayout: "templates/layouts/main.html",
 	})
 	app.Use(logger.New())
 
@@ -47,6 +49,12 @@ func runServer() error {
 	}))
 
 	horse.Routes(app, db)
+	// Auth routes (Stytch magic links)
+	stytch, err := auth.NewStytchFromEnv()
+	if err != nil {
+		return fmt.Errorf("stytch failed to configure: %w", err)
+	}
+	stytch.Register(app)
 	return app.Listen(":4242")
 }
 
