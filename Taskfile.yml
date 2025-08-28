@@ -47,4 +47,4 @@ tasks:
             exit 1
           fi
         fi
-        migrate -database "${MIGRATIONS_DSN}" -path ./db/migrations up
+        migrate -database "${MIGRATIONS_DSN}" -path ./database/migrations up
