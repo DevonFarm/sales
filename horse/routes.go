@@ -2,19 +2,22 @@ package horse
 
 import (
 	"github.com/DevonFarm/sales/database"
+	"github.com/DevonFarm/sales/server"
 	"github.com/DevonFarm/sales/utils"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-func Routes(app *fiber.App, db *database.DB) {
-	app.Get("/horses", getHorses(db))
-	app.Get("/horses/:id", getHorse(db))
-	app.Post("/horses", createHorse(db))
-	app.Put("/horses/:id", updateHorse(db))
-	app.Delete("/horses/:id", deleteHorse(db))
+func Routes(cfg *server.Server) {
+	farm := cfg.App.Group("/:farmID", cfg.Auth.RequireAuth())
+	farm.Get("/horses", getHorses(cfg.DB))
+	farm.Get("/horse/:id", getHorse(cfg.DB))
+	farm.Post("/horse", createHorse(cfg.DB))
+	farm.Put("/horse/:id", updateHorse(cfg.DB))
+	farm.Delete("/horse/:id", deleteHorse(cfg.DB))
 
-	app.Get("/list", func(c *fiber.Ctx) error {
+	cfg.App.Get("/list", func(c *fiber.Ctx) error {
+		// TODO: need a different template to list horses
 		return c.Render("templates/create", fiber.Map{
 			"Title": "Listing",
 		})
