@@ -9,10 +9,13 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"github.com/stytchauth/stytch-go/v16/stytch/consumer/magiclinks"
 	"github.com/stytchauth/stytch-go/v16/stytch/consumer/magiclinks/email"
 	"github.com/stytchauth/stytch-go/v16/stytch/consumer/sessions"
 	"github.com/stytchauth/stytch-go/v16/stytch/consumer/stytchapi"
+
+	"github.com/DevonFarm/sales/farm"
 )
 
 const defaultCookieName = "stytch_session_jwt"
@@ -65,7 +68,7 @@ func (a *StytchAuth) RequireAuth() fiber.Handler {
 			c.SendStatus(fiber.StatusUnauthorized)
 			return err
 		}
-		c.Cookie(&fiber.Cookie{Name: a.CookieName, Value: "", Expires: time.Unix(0, 0), HTTPOnly: true, Secure: isSecure(c), SameSite: fiber.CookieSameSiteLaxMode})
+		c.Cookie(&fiber.Cookie{Name: a.CookieName, Value: res.SessionJWT, Expires: time.Unix(0, 0), HTTPOnly: true, Secure: isSecure(c), SameSite: fiber.CookieSameSiteLaxMode})
 
 		// Stash user info for handlers/templates
 		c.Locals("stytch_session", res.Session)
@@ -76,8 +79,22 @@ func (a *StytchAuth) RequireAuth() fiber.Handler {
 
 func (a *StytchAuth) renderLogin(c *fiber.Ctx) error {
 	// If already logged in, skip
-	if c.Cookies(a.CookieName) != "" {
-		return c.Redirect("/")
+	jwt := c.Cookies(a.CookieName)
+	if jwt != "" {
+		// check if session is valid and get farm ID from the user
+		res, err := a.Client.Sessions.AuthenticateJWT(c.Context(), 5*time.Minute, &sessions.AuthenticateParams{SessionJWT: jwt})
+		if err != nil {
+			// Session is invalid, go to the home page
+			return c.Redirect("/")
+		}
+		// Go to the farm's dashboard
+		userID := res.Session.UserID
+		// TODO: handle the parse error gracefully
+		farm, err := farm.GetFarmByUser(uuid.MustParse(userID))
+		if err != nil {
+			return c.Redirect("/")
+		}
+		return c.Redirect(fmt.Sprintf("/%s", farm.ID))
 	}
 	return c.Render("login", fiber.Map{
 		"Title": "Log in",
