@@ -48,3 +48,14 @@ tasks:
           fi
         fi
         migrate -database "${MIGRATIONS_DSN}" -path ./database/migrations up
+  db-create-migration:
+    desc: "Create a new database migration (usage: task db-create-migration -- migration_name)"
+    cmds:
+      - echo "Creating new migration..."
+      - |
+        if [ -z "{{.CLI_ARGS}}" ]; then
+          echo "Error: Migration name is required"
+          echo "Usage: task db-create-migration -- migration_name"
+          exit 1
+        fi
+        migrate create -ext sql -dir ./database/migrations {{.CLI_ARGS}}
