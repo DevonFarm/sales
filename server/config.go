@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"embed"
 	"fmt"
 	"net/http"
@@ -35,7 +34,6 @@ func NewServer(templateFS embed.FS) (*Server, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to db: %w", err)
 	}
-	defer db.Close(context.Background())
 
 	fs := http.FS(templateFS)
 	engine := html.NewFileSystem(fs, ".html")
@@ -50,7 +48,7 @@ func NewServer(templateFS embed.FS) (*Server, error) {
 	if err != nil {
 		return nil, fmt.Errorf("stytch failed to configure: %w", err)
 	}
-	stytch.Register(app)
+	stytch.Register(app, db)
 
 	// Serve static assets from embedded filesystem
 	app.Use("/assets", filesystem.New(filesystem.Config{

@@ -15,6 +15,7 @@ import (
 	"github.com/stytchauth/stytch-go/v16/stytch/consumer/sessions"
 	"github.com/stytchauth/stytch-go/v16/stytch/consumer/stytchapi"
 
+	"github.com/DevonFarm/sales/database"
 	"github.com/DevonFarm/sales/farm"
 )
 
@@ -46,10 +47,10 @@ func NewStytchFromEnv() (*StytchAuth, error) {
 }
 
 // Register mounts auth routes: GET /login, POST /login, GET /auth/callback, POST /logout
-func (a *StytchAuth) Register(app *fiber.App) {
-	app.Get("/login", a.renderLogin)
-	app.Post("/login", a.sendMagicLink)
-	app.Get("/auth/callback", a.magicLinkCallback)
+func (a *StytchAuth) Register(app *fiber.App, db *database.DB) {
+	app.Get("/login", a.renderLogin(db))
+	app.Post("/login", a.sendMagicLink(db))
+	app.Get("/auth/callback", a.magicLinkCallback(db))
 	app.Post("/logout", a.logout)
 }
 
@@ -77,86 +78,97 @@ func (a *StytchAuth) RequireAuth() fiber.Handler {
 	}
 }
 
-func (a *StytchAuth) renderLogin(c *fiber.Ctx) error {
-	// If already logged in, skip
-	jwt := c.Cookies(a.CookieName)
-	if jwt != "" {
-		// check if session is valid and get farm ID from the user
-		res, err := a.Client.Sessions.AuthenticateJWT(c.Context(), 5*time.Minute, &sessions.AuthenticateParams{SessionJWT: jwt})
-		if err != nil {
-			// Session is invalid, go to the home page
-			return c.Redirect("/")
-		}
-		// Go to the farm's dashboard
-		userID := res.Session.UserID
-		// TODO: handle the parse error gracefully
-		farm, err := farm.GetFarmByUser(uuid.MustParse(userID))
-		if err != nil {
-			return c.Redirect("/")
-		}
-		return c.Redirect(fmt.Sprintf("/%s", farm.ID))
-	}
-	return c.Render("login", fiber.Map{
-		"Title": "Log in",
-	})
-}
+func (a *StytchAuth) renderLogin(db *database.DB) func(*fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
+		// If already logged in, skip
+		jwt := c.Cookies(a.CookieName)
+		if jwt != "" {
+			// check if session is valid and get farm ID from the user
+			res, err := a.Client.Sessions.AuthenticateJWT(c.Context(), 5*time.Minute, &sessions.AuthenticateParams{SessionJWT: jwt})
+			if err == nil {
+				stytchUserID := res.Session.UserID
 
-func (a *StytchAuth) sendMagicLink(c *fiber.Ctx) error {
-	type form struct {
-		Email string `form:"email"`
-	}
-	var f form
-	if err := c.BodyParser(&f); err != nil || f.Email == "" {
-		return c.Status(fiber.StatusBadRequest).Render("login", fiber.Map{
+				// Go to the farm's dashboard
+				farm, err := farm.GetFarmByUser(c.Context(), db, uuid.MustParse(stytchUserID))
+				if err != nil {
+					return c.Redirect("/")
+				}
+				return c.Redirect(fmt.Sprintf("/%s", farm.ID))
+			}
+		}
+		return c.Render("login", fiber.Map{
 			"Title": "Log in",
-			"Error": "Enter a valid email",
 		})
 	}
-
-	ctx, cancel := context.WithTimeout(c.Context(), 5*time.Second)
-	defer cancel()
-
-	// Send the magic link via email
-	params := email.LoginOrCreateParams{Email: f.Email}
-	if _, err := a.Client.MagicLinks.Email.LoginOrCreate(ctx, &params); err != nil {
-		return c.Status(fiber.StatusBadRequest).Render("login", fiber.Map{
-			"Title": "Log in",
-			"Error": fmt.Sprintf("Couldn't send link: %v", err),
-		})
-	}
-
-	return c.Render("login_sent", fiber.Map{"Title": "Check your email", "Email": f.Email})
 }
 
-func (a *StytchAuth) magicLinkCallback(c *fiber.Ctx) error {
-	token := c.Query("token")
-	if token == "" {
-		return c.Status(fiber.StatusBadRequest).SendString("missing token")
+func (a *StytchAuth) sendMagicLink(db *database.DB) func(*fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
+		var u farm.User
+		if err := c.BodyParser(&u); err != nil {
+			return c.Status(fiber.StatusBadRequest).Render("login", fiber.Map{
+				"Title": "Log in",
+				"Error": "Enter a valid name and email",
+			})
+		}
+
+		// Send the magic link via email
+		params := email.LoginOrCreateParams{Email: u.Email}
+		res, err := a.Client.MagicLinks.Email.LoginOrCreate(c.Context(), &params)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString("failed to send magic link")
+		}
+
+		// Create the user here - better UX as user creation happens during magic link sending
+		// We now have both email (u.Email) and Stytch UserID (res.UserID)
+		_, err = farm.NewUser(c.Context(), db, u.Name, u.Email, res.UserID)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString("failed to create user")
+		}
+
+		return c.Render("login_sent", fiber.Map{"Title": "Check your email", "Email": u.Email})
 	}
-	ctx, cancel := context.WithTimeout(c.Context(), 5*time.Second)
-	defer cancel()
+}
 
-	res, err := a.Client.MagicLinks.Authenticate(ctx, &magiclinks.AuthenticateParams{
-		Token:                  token,
-		SessionDurationMinutes: 60,
-	})
-	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).SendString("invalid or expired link")
+func (a *StytchAuth) magicLinkCallback(db *database.DB) func(*fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
+		token := c.Query("token")
+		if token == "" {
+			return c.Status(fiber.StatusBadRequest).SendString("missing token")
+		}
+		ctx, cancel := context.WithTimeout(c.Context(), 5*time.Second)
+		defer cancel()
+
+		res, err := a.Client.MagicLinks.Authenticate(ctx, &magiclinks.AuthenticateParams{
+			Token:                  token,
+			SessionDurationMinutes: 60,
+		})
+		if err != nil {
+			return c.Status(fiber.StatusUnauthorized).SendString("invalid or expired link")
+		}
+
+		// TODO: Possibly create the user if it doesn't exist (fallback in case it wasn't created during sendMagicLink)
+		// Note: We don't have the email in the session, so we'd need to store it elsewhere or
+		// ensure user creation happens in sendMagicLink. For now, using a placeholder.
+		// _, err = farm.NewUser(c.Context(), db, "TODO: name", "TODO: email", res.Session.UserID)
+		// if err != nil {
+		// 	return c.Status(fiber.StatusInternalServerError).SendString("failed to create user")
+		// }
+
+		// Set the session JWT cookie
+		c.Cookie(&fiber.Cookie{
+			Name:     a.CookieName,
+			Value:    res.SessionJWT,
+			Expires:  time.Now().Add(24 * time.Hour),
+			HTTPOnly: true,
+			Secure:   isSecure(c),
+			SameSite: fiber.CookieSameSiteLaxMode,
+		})
+
+		// Redirect to home or to a 'next' param if present
+		next := c.Query("next", "/")
+		return c.Redirect(next)
 	}
-
-	// Set the session JWT cookie
-	c.Cookie(&fiber.Cookie{
-		Name:     a.CookieName,
-		Value:    res.SessionJWT,
-		Expires:  time.Now().Add(24 * time.Hour),
-		HTTPOnly: true,
-		Secure:   isSecure(c),
-		SameSite: fiber.CookieSameSiteLaxMode,
-	})
-
-	// Redirect to home or to a 'next' param if present
-	next := c.Query("next", "/")
-	return c.Redirect(next)
 }
 
 func (a *StytchAuth) logout(c *fiber.Ctx) error {
