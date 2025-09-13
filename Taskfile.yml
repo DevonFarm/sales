@@ -5,6 +5,8 @@ version: "3"
 vars:
   GREETING: Hello, World!
 
+dotenv: [".env"]
+
 tasks:
   default:
     desc: "Greet the world"
@@ -16,6 +18,14 @@ tasks:
     cmds:
       - task: install-db-cert
       - task: install-go-migrate
+      - |
+        if ! command -v brew >/dev/null 2>&1; then
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        fi
+      - |
+        if ! command -v cockroach >/dev/null 2>&1; then
+          brew install cockroachdb/tap/cockroach
+        fi
   install-db-cert:
     desc: "Install the CockroachDB certificate"
     cmds:
@@ -39,13 +49,8 @@ tasks:
       - echo "Running db migrations..."
       - |
         if [ -z "$MIGRATIONS_DSN" ]; then
-          # try getting from .env
-          export "$(grep MIGRATIONS_DSN .env)"
-          # error if its still not set
-          if [ -z "$MIGRATIONS_DSN" ]; then
-            echo "Error: MIGRATIONS_DSN environment variable is not set"
-            exit 1
-          fi
+          echo "Error: MIGRATIONS_DSN environment variable is not set"
+          exit 1
         fi
         migrate -database "${MIGRATIONS_DSN}" -path ./database/migrations up
   db-create-migration:
@@ -59,3 +64,12 @@ tasks:
           exit 1
         fi
         migrate create -ext sql -dir ./database/migrations {{.CLI_ARGS}}
+  sql:
+    desc: "Open a SQL shell to the database"
+    cmds:
+      - |
+        if [ -z "$COCKROACH_DSN" ]; then
+          echo "Error: COCKROACH_DSN environment variable is not set"
+          exit 1
+        fi
+        cockroach sql --url="$COCKROACH_DSN"
