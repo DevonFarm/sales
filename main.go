@@ -4,6 +4,7 @@ import (
 	"embed"
 	"log"
 
+	"github.com/DevonFarm/sales/farm"
 	"github.com/DevonFarm/sales/horse"
 	"github.com/DevonFarm/sales/server"
 )
@@ -17,7 +18,8 @@ func runServer() error {
 		return err
 	}
 
-	horse.Routes(srvr)
+	horse.RegisterRoutes(srvr.App, srvr.DB, srvr.Auth)
+	farm.RegisterRoutes(srvr.App, srvr.DB)
 
 	return srvr.Listen(":4242")
 }
