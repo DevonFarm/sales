@@ -51,7 +51,7 @@ func NewStytchFromEnv() (*StytchAuth, error) {
 func (a *StytchAuth) Register(app *fiber.App, db *database.DB) {
 	app.Get("/login", a.renderLogin(db))
 	app.Post("/login", a.sendMagicLink(db))
-	app.Get("/auth/callback", a.magicLinkCallback())
+	app.Get("/auth/callback", a.magicLinkCallback(db))
 	app.Post("/logout", a.logout)
 }
 
@@ -137,7 +137,7 @@ func (a *StytchAuth) sendMagicLink(db *database.DB) func(*fiber.Ctx) error {
 	}
 }
 
-func (a *StytchAuth) magicLinkCallback() func(*fiber.Ctx) error {
+func (a *StytchAuth) magicLinkCallback(db *database.DB) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		token := c.Query("token")
 		if token == "" {
@@ -164,9 +164,22 @@ func (a *StytchAuth) magicLinkCallback() func(*fiber.Ctx) error {
 			SameSite: fiber.CookieSameSiteLaxMode,
 		})
 
-		// Redirect to home or to a 'next' param if present
-		next := c.Query("next", "/")
-		return c.Redirect(next)
+		user, err := farm.GetUserByStytchID(c.Context(), db, res.UserID)
+		if err != nil {
+			return utils.LogAndRespondError(
+				c,
+				"failed to get user by stytch ID",
+				err,
+				fiber.StatusInternalServerError,
+			)
+		}
+
+		if user.FarmID == uuid.Nil {
+			// No farm yet, go to create farm page
+			return c.Redirect("/farm/new")
+		}
+		// Redirect to the user's farm dashboard
+		return c.Redirect(fmt.Sprintf("/farm/%s", user.FarmID))
 	}
 }
 

@@ -15,6 +15,7 @@ type Farm struct {
 	Name string    `db:"name"`
 }
 
+// TODO: need a /farm/new route to create a farm
 func NewFarm(ctx context.Context, name string, db *database.DB) (*Farm, error) {
 	farm := &Farm{
 		Name: name,
