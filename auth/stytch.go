@@ -51,7 +51,7 @@ func NewStytchFromEnv() (*StytchAuth, error) {
 func (a *StytchAuth) Register(app *fiber.App, db *database.DB) {
 	app.Get("/login", a.renderLogin(db))
 	app.Post("/login", a.sendMagicLink(db))
-	app.Get("/auth/callback", a.magicLinkCallback(db))
+	app.Get("/auth/callback", a.magicLinkCallback())
 	app.Post("/logout", a.logout)
 }
 
@@ -120,10 +120,6 @@ func (a *StytchAuth) sendMagicLink(db *database.DB) func(*fiber.Ctx) error {
 			return c.Status(fiber.StatusInternalServerError).SendString("failed to send magic link")
 		}
 
-		// Check if the user exists
-
-		// Create the user here - better UX as user creation happens during magic link sending
-		// We now have both email (u.Email) and Stytch UserID (res.UserID)
 		_, err = farm.NewUser(c.Context(), db, u.Name, u.Email, res.UserID)
 		if err != nil {
 			return utils.LogAndRespondError(
@@ -141,7 +137,7 @@ func (a *StytchAuth) sendMagicLink(db *database.DB) func(*fiber.Ctx) error {
 	}
 }
 
-func (a *StytchAuth) magicLinkCallback(db *database.DB) func(*fiber.Ctx) error {
+func (a *StytchAuth) magicLinkCallback() func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		token := c.Query("token")
 		if token == "" {
@@ -157,14 +153,6 @@ func (a *StytchAuth) magicLinkCallback(db *database.DB) func(*fiber.Ctx) error {
 		if err != nil {
 			return c.Status(fiber.StatusUnauthorized).SendString("invalid or expired link")
 		}
-
-		// TODO: Possibly create the user if it doesn't exist (fallback in case it wasn't created during sendMagicLink)
-		// Note: We don't have the email in the session, so we'd need to store it elsewhere or
-		// ensure user creation happens in sendMagicLink. For now, using a placeholder.
-		// _, err = farm.NewUser(c.Context(), db, "TODO: name", "TODO: email", res.Session.UserID)
-		// if err != nil {
-		// 	return c.Status(fiber.StatusInternalServerError).SendString("failed to create user")
-		// }
 
 		// Set the session JWT cookie
 		c.Cookie(&fiber.Cookie{
