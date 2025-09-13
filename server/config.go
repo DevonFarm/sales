@@ -39,9 +39,14 @@ func NewServer(templateFS embed.FS) (*Server, error) {
 	engine := html.NewFileSystem(fs, ".html")
 	app := fiber.New(fiber.Config{
 		Views:       engine,
-		ViewsLayout: "templates/layouts/main.html",
+		ViewsLayout: "templates/layouts/main",
 	})
 	app.Use(logger.New())
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.Render("templates/index", fiber.Map{
+			"Title": "Devon Farm Sales",
+		})
+	})
 
 	// Auth routes
 	stytch, err := auth.NewStytchFromEnv()

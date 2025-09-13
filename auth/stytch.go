@@ -17,6 +17,7 @@ import (
 
 	"github.com/DevonFarm/sales/database"
 	"github.com/DevonFarm/sales/farm"
+	"github.com/DevonFarm/sales/utils"
 )
 
 const defaultCookieName = "stytch_session_jwt"
@@ -96,7 +97,7 @@ func (a *StytchAuth) renderLogin(db *database.DB) func(*fiber.Ctx) error {
 				return c.Redirect(fmt.Sprintf("/%s", farm.ID))
 			}
 		}
-		return c.Render("login", fiber.Map{
+		return c.Render("templates/login", fiber.Map{
 			"Title": "Log in",
 		})
 	}
@@ -119,14 +120,24 @@ func (a *StytchAuth) sendMagicLink(db *database.DB) func(*fiber.Ctx) error {
 			return c.Status(fiber.StatusInternalServerError).SendString("failed to send magic link")
 		}
 
+		// Check if the user exists
+
 		// Create the user here - better UX as user creation happens during magic link sending
 		// We now have both email (u.Email) and Stytch UserID (res.UserID)
 		_, err = farm.NewUser(c.Context(), db, u.Name, u.Email, res.UserID)
 		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).SendString("failed to create user")
+			return utils.LogAndRespondError(
+				c,
+				"failed to create user",
+				err,
+				fiber.StatusInternalServerError,
+			)
 		}
 
-		return c.Render("login_sent", fiber.Map{"Title": "Check your email", "Email": u.Email})
+		return c.Render(
+			"templates/login_sent",
+			fiber.Map{"Title": "Check your email", "Email": u.Email},
+		)
 	}
 }
 

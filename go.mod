@@ -7,9 +7,9 @@ require (
 	github.com/gofiber/template/html/v2 v2.1.3
 	github.com/google/uuid v1.6.0
 	github.com/iancoleman/strcase v0.3.0
-	github.com/jackc/pgx/v5 v5.7.5
+	github.com/jackc/pgx/v5 v5.7.6
 	github.com/joho/godotenv v1.5.1
-	github.com/stytchauth/stytch-go/v16 v16.31.0
+	github.com/stytchauth/stytch-go/v16 v16.35.0
 )
 
 require (
