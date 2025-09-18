@@ -1,0 +1,1 @@
+-- Should not reverse adding the farm_id column to horses

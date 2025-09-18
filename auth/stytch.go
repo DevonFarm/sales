@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/log"
 	"github.com/google/uuid"
 	"github.com/stytchauth/stytch-go/v16/stytch/consumer/magiclinks"
 	"github.com/stytchauth/stytch-go/v16/stytch/consumer/magiclinks/email"
@@ -16,11 +17,11 @@ import (
 	"github.com/stytchauth/stytch-go/v16/stytch/consumer/stytchapi"
 
 	"github.com/DevonFarm/sales/database"
-	"github.com/DevonFarm/sales/farm"
+	"github.com/DevonFarm/sales/user"
 	"github.com/DevonFarm/sales/utils"
 )
 
-const defaultCookieName = "stytch_session_jwt"
+const defaultCookieName = "stytch_session_token"
 
 type StytchAuth struct {
 	CookieName string
@@ -55,22 +56,31 @@ func (a *StytchAuth) Register(app *fiber.App, db *database.DB) {
 	app.Post("/logout", a.logout)
 }
 
-// RequireAuth verifies the session JWT cookie and sets user info in Locals.
+// RequireAuth verifies the session token cookie and sets user info in Locals.
 func (a *StytchAuth) RequireAuth() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		jwt := c.Cookies(a.CookieName)
-		if jwt == "" {
+		token := c.Cookies(a.CookieName)
+		if token == "" {
 			return c.Redirect("/login")
 		}
 		ctx, cancel := context.WithTimeout(c.Context(), 5*time.Second)
 		defer cancel()
-		// Authenticate the session JWT with Stytch
-		res, err := a.Client.Sessions.AuthenticateJWT(ctx, 5*time.Minute, &sessions.AuthenticateParams{SessionJWT: jwt})
+		// Authenticate the session token with Stytch
+		res, err := a.Client.Sessions.Authenticate(ctx, &sessions.AuthenticateParams{SessionToken: token})
 		if err != nil {
 			c.SendStatus(fiber.StatusUnauthorized)
 			return err
 		}
-		c.Cookie(&fiber.Cookie{Name: a.CookieName, Value: res.SessionJWT, Expires: time.Unix(0, 0), HTTPOnly: true, Secure: isSecure(c), SameSite: fiber.CookieSameSiteLaxMode})
+		// Refresh the cookie with a new expiration time
+		c.Cookie(&fiber.Cookie{
+			Name:     a.CookieName,
+			Value:    res.SessionToken,
+			Expires:  time.Now().Add(24 * time.Hour),
+			HTTPOnly: true,
+			Secure:   isSecure(c),
+			SameSite: fiber.CookieSameSiteLaxMode,
+			Path:     "/",
+		})
 
 		// Stash user info for handlers/templates
 		c.Locals("stytch_session", res.Session)
@@ -82,19 +92,25 @@ func (a *StytchAuth) RequireAuth() fiber.Handler {
 func (a *StytchAuth) renderLogin(db *database.DB) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		// If already logged in, skip
-		jwt := c.Cookies(a.CookieName)
-		if jwt != "" {
+		token := c.Cookies(a.CookieName)
+		if token != "" {
 			// check if session is valid and get farm ID from the user
-			res, err := a.Client.Sessions.AuthenticateJWT(c.Context(), 5*time.Minute, &sessions.AuthenticateParams{SessionJWT: jwt})
+			res, err := a.Client.Sessions.Authenticate(c.Context(), &sessions.AuthenticateParams{SessionToken: token})
 			if err == nil {
 				stytchUserID := res.Session.UserID
-
-				// Go to the farm's dashboard
-				farm, err := farm.GetFarmByUser(c.Context(), db, uuid.MustParse(stytchUserID))
-				if err != nil {
-					return c.Redirect("/")
+				u, err := user.GetUserByStytchID(c.Context(), db, stytchUserID)
+				if err == nil && u != nil {
+					if u.FarmID == uuid.Nil {
+						// No farm yet, go to create farm page
+						return c.Redirect(fmt.Sprintf("/new/farm/%s", u.ID))
+					}
+					// Redirect to the user's farm dashboard
+					return c.Redirect(fmt.Sprintf("/farm/%s", u.FarmID))
+				} else {
+					log.Warnf("user not found for stytch ID %s: %v", stytchUserID, err)
 				}
-				return c.Redirect(fmt.Sprintf("/%s", farm.ID))
+			} else {
+				log.Warnf("invalid session token: %v", err)
 			}
 		}
 		return c.Render("templates/login", fiber.Map{
@@ -105,7 +121,7 @@ func (a *StytchAuth) renderLogin(db *database.DB) func(*fiber.Ctx) error {
 
 func (a *StytchAuth) sendMagicLink(db *database.DB) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		var u farm.User
+		var u user.User
 		if err := c.BodyParser(&u); err != nil {
 			return c.Status(fiber.StatusBadRequest).Render("login", fiber.Map{
 				"Title": "Log in",
@@ -120,7 +136,7 @@ func (a *StytchAuth) sendMagicLink(db *database.DB) func(*fiber.Ctx) error {
 			return c.Status(fiber.StatusInternalServerError).SendString("failed to send magic link")
 		}
 
-		_, err = farm.NewUser(c.Context(), db, u.Name, u.Email, res.UserID)
+		_, err = user.NewUser(c.Context(), db, u.Name, u.Email, res.UserID)
 		if err != nil {
 			return utils.LogAndRespondError(
 				c,
@@ -154,17 +170,18 @@ func (a *StytchAuth) magicLinkCallback(db *database.DB) func(*fiber.Ctx) error {
 			return c.Status(fiber.StatusUnauthorized).SendString("invalid or expired link")
 		}
 
-		// Set the session JWT cookie
+		// Set the session token cookie
 		c.Cookie(&fiber.Cookie{
 			Name:     a.CookieName,
-			Value:    res.SessionJWT,
+			Value:    res.SessionToken,
 			Expires:  time.Now().Add(24 * time.Hour),
 			HTTPOnly: true,
 			Secure:   isSecure(c),
 			SameSite: fiber.CookieSameSiteLaxMode,
+			Path:     "/",
 		})
 
-		user, err := farm.GetUserByStytchID(c.Context(), db, res.UserID)
+		u, err := user.GetUserByStytchID(c.Context(), db, res.UserID)
 		if err != nil {
 			return utils.LogAndRespondError(
 				c,
@@ -173,23 +190,26 @@ func (a *StytchAuth) magicLinkCallback(db *database.DB) func(*fiber.Ctx) error {
 				fiber.StatusInternalServerError,
 			)
 		}
+		if u == nil {
+			return c.Status(fiber.StatusInternalServerError).SendString("user not found")
+		}
 
-		if user.FarmID == uuid.Nil {
+		if u.FarmID == uuid.Nil {
 			// No farm yet, go to create farm page
-			return c.Redirect("/farm/new")
+			return c.Redirect(fmt.Sprintf("/new/farm/%s", u.ID))
 		}
 		// Redirect to the user's farm dashboard
-		return c.Redirect(fmt.Sprintf("/farm/%s", user.FarmID))
+		return c.Redirect(fmt.Sprintf("/farm/%s", u.FarmID))
 	}
 }
 
 func (a *StytchAuth) logout(c *fiber.Ctx) error {
-	jwt := c.Cookies(a.CookieName)
-	if jwt != "" {
+	token := c.Cookies(a.CookieName)
+	if token != "" {
 		ctx, cancel := context.WithTimeout(c.Context(), 5*time.Second)
 		defer cancel()
 
-		_, _ = a.Client.Sessions.Revoke(ctx, &sessions.RevokeParams{SessionJWT: jwt})
+		_, _ = a.Client.Sessions.Revoke(ctx, &sessions.RevokeParams{SessionToken: token})
 		c.Cookie(&fiber.Cookie{Name: a.CookieName, Value: "", Expires: time.Unix(0, 0), HTTPOnly: true, Secure: isSecure(c), SameSite: fiber.CookieSameSiteLaxMode, Path: "/"})
 		return c.Redirect("/")
 	}

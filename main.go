@@ -19,7 +19,7 @@ func runServer() error {
 	}
 
 	horse.RegisterRoutes(srvr.App, srvr.DB, srvr.Auth)
-	farm.RegisterRoutes(srvr.App, srvr.DB)
+	farm.RegisterRoutes(srvr.App, srvr.DB, srvr.Auth)
 
 	return srvr.Listen(":4242")
 }

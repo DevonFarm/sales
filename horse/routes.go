@@ -3,18 +3,20 @@ package horse
 import (
 	"github.com/DevonFarm/sales/auth"
 	"github.com/DevonFarm/sales/database"
+	"github.com/DevonFarm/sales/farm"
 	"github.com/DevonFarm/sales/utils"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 func RegisterRoutes(app *fiber.App, db *database.DB, auth *auth.StytchAuth) {
-	farm := app.Group("/:farmID", auth.RequireAuth())
-	farm.Get("/horses", getHorses(db))
-	farm.Get("/horse/:id", getHorse(db))
-	farm.Post("/horse", createHorse(db))
-	farm.Put("/horse/:id", updateHorse(db))
-	farm.Delete("/horse/:id", deleteHorse(db))
+	farmGroup := app.Group("/farm/:farmID", auth.RequireAuth())
+	farmGroup.Get("/", getDashboard(db))
+	farmGroup.Get("/horses", getHorses(db))
+	farmGroup.Get("/horse/:id", getHorse(db))
+	farmGroup.Post("/horse", createHorse(db))
+	farmGroup.Put("/horse/:id", updateHorse(db))
+	farmGroup.Delete("/horse/:id", deleteHorse(db))
 
 	app.Get("/list", func(c *fiber.Ctx) error {
 		// TODO: need a different template to list horses
@@ -22,6 +24,39 @@ func RegisterRoutes(app *fiber.App, db *database.DB, auth *auth.StytchAuth) {
 			"Title": "Listing",
 		})
 	})
+}
+
+func getDashboard(db *database.DB) func(*fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
+		farmID := c.Params("farmID")
+		if farmID == "" {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "farm ID is required"})
+		}
+
+		// Get farm details
+		f, err := farm.GetFarm(c.Context(), db, farmID)
+		if err != nil {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "farm not found"})
+		}
+
+		horses, err := GetHorsesByFarmID(c.Context(), db, f.ID)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to get horses"})
+		}
+
+		// Get dashboard statistics
+		stats, err := GetDashboardStats(c.Context(), db, f.ID)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to get stats"})
+		}
+
+		return c.Render("templates/dashboard", fiber.Map{
+			"Title":  f.Name + " Dashboard",
+			"Farm":   f,
+			"Horses": horses,
+			"Stats":  stats,
+		})
+	}
 }
 
 func getHorses(db *database.DB) func(*fiber.Ctx) error {
@@ -52,8 +87,10 @@ func createHorse(db *database.DB) func(*fiber.Ctx) error {
 			}
 			h.DateOfBirth = dob
 		}
-		h.Save(c.Context(), db)
-		return c.SendStatus(fiber.StatusCreated)
+		if err := h.Save(c.Context(), db); err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		}
+		return c.Status(fiber.StatusCreated).JSON(h)
 	}
 }
 

@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 
 	"github.com/DevonFarm/sales/database"
+	"github.com/DevonFarm/sales/user"
 )
 
 type Farm struct {
@@ -15,123 +15,71 @@ type Farm struct {
 	Name string    `db:"name"`
 }
 
-// TODO: need a /farm/new route to create a farm
-func NewFarm(ctx context.Context, name string, db *database.DB) (*Farm, error) {
+func NewFarm(ctx context.Context, name string, db *database.DB, userID string) (*Farm, error) {
 	farm := &Farm{
 		Name: name,
 	}
-	if err := farm.Save(ctx, db); err != nil {
+	if err := farm.Save(ctx, db, userID); err != nil {
 		return nil, fmt.Errorf("failed to save farm: %w", err)
 	}
 	return farm, nil
 }
 
-func (f *Farm) Save(ctx context.Context, db *database.DB) error {
-	row := db.QueryRow(
-		ctx,
-		`INSERT INTO farms (name) VALUES ($1) RETURNING id`,
-		f.Name,
-	)
-	return row.Scan(&f.ID)
-}
-
-type User struct {
-	ID       uuid.UUID `db:"id" form:"-"`
-	Name     string    `db:"name" form:"name"`
-	Email    string    `db:"email" form:"email"`
-	FarmID   uuid.UUID `db:"farm_id" form:"-"`
-	StytchID string    `db:"stytch_id" form:"-"`
-}
-
-func NewUser(ctx context.Context, db *database.DB, name, email, stytchID string) (*User, error) {
-	user := &User{
-		Name:     name,
-		Email:    email,
-		StytchID: stytchID,
-	}
-	if err := user.Save(ctx, db); err != nil {
-		return nil, fmt.Errorf("failed to save user: %w", err)
-	}
-	return user, nil
-}
-
-func GetUserByStytchID(ctx context.Context, db *database.DB, stytchID string) (*User, error) {
-	rows, err := db.Query(
-		ctx,
-		`SELECT id, name, email, farm_id, stytch_id FROM users WHERE stytch_id = $1`,
-		stytchID,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query user by stytch_id: %w", err)
-	}
-	user, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[User])
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			return nil, nil
-		}
-		return nil, fmt.Errorf("failed to get user by stytch_id: %w", err)
-	}
-	return &user, nil
-}
-
-func (u *User) Save(ctx context.Context, db *database.DB) error {
-	found := false
-	if u.ID != uuid.Nil {
-		found = true
-	} else {
-		foundUser, err := GetUserByStytchID(ctx, db, u.StytchID)
+func (f *Farm) Save(ctx context.Context, db *database.DB, userID string) error {
+	if f.ID == uuid.Nil {
+		u, err := user.GetUser(ctx, db, userID)
 		if err != nil {
-			return fmt.Errorf("failed to check existing user: %w", err)
+			return fmt.Errorf("failed to get user: %w", err)
 		}
-		if foundUser != nil {
-			found = true
-			u.ID = foundUser.ID
+		if u == nil {
+			return fmt.Errorf("user not found with ID: %s", userID)
+		}
+		if u.FarmID != uuid.Nil {
+			f.ID = u.FarmID
 		} else {
 			row := db.QueryRow(
 				ctx,
-				`INSERT INTO users (name, email, stytch_id, farm_id) VALUES ($1, $2, $3, NULLIF($4, $5)) RETURNING id`,
-				u.Name,     // $1
-				u.Email,    // $2
-				u.StytchID, // $3
-				u.FarmID,   // $4
-				uuid.Nil,   // $5
+				`INSERT INTO farms (name) VALUES ($1) RETURNING id`,
+				f.Name,
 			)
-			return row.Scan(&u.ID)
+			if err := row.Scan(&f.ID); err != nil {
+				return fmt.Errorf("failed to insert farm: %w", err)
+			}
+			// Associate the farm with the user
+			_, err := db.Exec(
+				ctx,
+				`UPDATE users SET farm_id = $1 WHERE id = $2`,
+				f.ID,
+				userID,
+			)
+			if err != nil {
+				return fmt.Errorf("failed to associate farm with user: %w", err)
+			}
+			return nil
 		}
 	}
-	if found {
-		// Update existing user
-		_, err := db.Exec(
-			ctx,
-			`UPDATE users SET name = $1, email = $2, farm_id = NULLIF($3, $4) WHERE id = $5`,
-			u.Name,   // $1
-			u.Email,  // $2
-			u.FarmID, // $3
-			uuid.Nil, // $4
-			u.ID,     // $5
-		)
-		if err != nil {
-			return fmt.Errorf("failed to update user: %w", err)
-		}
+	// Update existing farm
+	_, err := db.Exec(
+		ctx,
+		`UPDATE farms SET name = $1 WHERE id = $2`,
+		f.Name,
+		f.ID,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to update farm: %w", err)
 	}
 	return nil
 }
 
-func GetFarmByUser(ctx context.Context, db *database.DB, userID uuid.UUID) (*Farm, error) {
-	rows, err := db.Query(
+func GetFarm(ctx context.Context, db *database.DB, farmID string) (*Farm, error) {
+	var farm Farm
+	row := db.QueryRow(
 		ctx,
-		`SELECT f.id, f.name FROM farms f JOIN users u ON f.id = u.farm_id WHERE u.id = $1`,
-		userID,
+		`SELECT id, name FROM farms WHERE id = $1`,
+		farmID,
 	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query farm by user: %w", err)
-	}
-	farm, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[Farm])
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			return nil, nil
-		}
-		return nil, fmt.Errorf("failed to get farm by user: %w", err)
+	if err := row.Scan(&farm.ID, &farm.Name); err != nil {
+		return nil, fmt.Errorf("failed to get farm: %w", err)
 	}
 	return &farm, nil
 }
