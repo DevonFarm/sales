@@ -5,6 +5,7 @@ import (
 	"github.com/DevonFarm/sales/database"
 	"github.com/DevonFarm/sales/farm"
 	"github.com/DevonFarm/sales/utils"
+	"github.com/google/uuid"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -87,6 +88,7 @@ func createHorse(db *database.DB) func(*fiber.Ctx) error {
 			}
 			h.DateOfBirth = dob
 		}
+		h.FarmID = uuid.MustParse(c.Params("farmID"))
 		if err := h.Save(c.Context(), db); err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 		}
