@@ -42,16 +42,6 @@ func (h *Horse) NewImage(full, thumbnail, alt string) {
 	h.Images = append(h.Images, img)
 }
 
-func NewHorse(farmID uuid.UUID, name string, desc string, dob time.Time, g Gender) *Horse {
-	return &Horse{
-		FarmID:      farmID,
-		Name:        name,
-		Description: desc,
-		DateOfBirth: dob,
-		Gender:      g,
-	}
-}
-
 func (h *Horse) Save(ctx context.Context, db *database.DB) error {
 	// Validate horse data
 	if h.Gender.IsInvalid() {
