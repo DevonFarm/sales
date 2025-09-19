@@ -88,7 +88,12 @@ func createHorse(db *database.DB) func(*fiber.Ctx) error {
 			}
 			h.DateOfBirth = dob
 		}
-		h.FarmID = uuid.MustParse(c.Params("farmID"))
+		farmIDStr := c.Params("farmID")
+		farmID, err := uuid.Parse(farmIDStr)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid farm ID"})
+		}
+		h.FarmID = farmID
 		if err := h.Save(c.Context(), db); err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 		}
