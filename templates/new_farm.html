@@ -1,0 +1,10 @@
+<form
+  action="/new/farm/{{.UserID}}"
+  method="post"
+  enctype="multipart/form-data"
+>
+  <label for="name">Farm Name<span style="color: red">*</span>:</label>
+  <input type="text" id="name" name="name" required />
+
+  <button type="submit">Submit</button>
+</form>

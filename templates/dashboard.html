@@ -1,0 +1,194 @@
+<main>
+  <div class="farm-header">
+    <h1>{{.Farm.Name}} Dashboard</h1>
+    <p class="farm-subtitle">Farm Management Portal</p>
+  </div>
+
+  <div class="dashboard-stats">
+    <div class="stat-card">
+      <h3>Total Horses</h3>
+      <span class="stat-number">{{.Stats.TotalHorses}}</span>
+    </div>
+    <div class="stat-card">
+      <h3>Stallions</h3>
+      <span class="stat-number">{{.Stats.Stallions}}</span>
+    </div>
+    <div class="stat-card">
+      <h3>Mares</h3>
+      <span class="stat-number">{{.Stats.Mares}}</span>
+    </div>
+    <div class="stat-card">
+      <h3>Geldings</h3>
+      <span class="stat-number">{{.Stats.Geldings}}</span>
+    </div>
+  </div>
+
+  <div class="dashboard-actions">
+    <a href="/farm/{{.Farm.ID}}/horse" class="btn btn-primary">Add New Horse</a>
+    <a href="/farm/{{.Farm.ID}}/horses" class="btn btn-secondary"
+      >View All Horses</a
+    >
+  </div>
+
+  <div class="horses-section">
+    <h2>Recent Horses</h2>
+    {{if .Horses}}
+    <div class="horses-grid">
+      {{range .Horses}}
+      <div class="horse-card">
+        <div class="horse-info">
+          <h3>{{.Name}}</h3>
+          <p class="horse-details">{{.GenderString}}, {{.Age}} years old</p>
+          {{if .Description}}
+          <p class="horse-description">{{.Description}}</p>
+          {{end}}
+        </div>
+        <div class="horse-actions">
+          <a href="/farm/{{$.Farm.ID}}/horse/{{.ID}}" class="btn btn-small"
+            >View</a
+          >
+          <a
+            href="/farm/{{$.Farm.ID}}/horse/{{.ID}}/edit"
+            class="btn btn-small btn-secondary"
+            >Edit</a
+          >
+        </div>
+      </div>
+      {{end}}
+    </div>
+    {{else}}
+    <div class="empty-state">
+      <p>No horses added yet.</p>
+      <a href="/farm/{{.Farm.ID}}/horse" class="btn btn-primary"
+        >Add Your First Horse</a
+      >
+    </div>
+    {{end}}
+  </div>
+</main>
+
+<style>
+  .farm-header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .farm-subtitle {
+    color: #666;
+    margin-top: 0.5rem;
+  }
+
+  .dashboard-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+  }
+
+  .stat-card h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    color: #666;
+    font-weight: 600;
+  }
+
+  .stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #333;
+  }
+
+  .dashboard-actions {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    justify-content: center;
+  }
+
+  .btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-block;
+    text-align: center;
+  }
+
+  .btn-primary {
+    background: #007bff;
+    color: white;
+  }
+
+  .btn-secondary {
+    background: #6c757d;
+    color: white;
+  }
+
+  .btn-small {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  .horses-section h2 {
+    margin-bottom: 1rem;
+  }
+
+  .horses-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+  }
+
+  .horse-card {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1rem;
+    background: white;
+  }
+
+  .horse-info h3 {
+    margin: 0 0 0.5rem 0;
+    color: #333;
+  }
+
+  .horse-details {
+    color: #666;
+    font-size: 0.9rem;
+    margin: 0.25rem 0;
+  }
+
+  .horse-description {
+    color: #555;
+    font-size: 0.9rem;
+    margin: 0.5rem 0;
+    line-height: 1.4;
+  }
+
+  .horse-actions {
+    margin-top: 1rem;
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #666;
+  }
+
+  .empty-state p {
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+  }
+</style>
