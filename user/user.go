@@ -73,27 +73,27 @@ func GetUserByStytchID(ctx context.Context, db *database.DB, stytchID string) (*
 }
 
 func (u *User) Save(ctx context.Context, db *database.DB) error {
-	if u.ID == uuid.Nil {
-		foundUser, err := GetUserByStytchID(ctx, db, u.StytchID)
-		if err != nil {
-			return fmt.Errorf("failed to check existing user: %w", err)
-		}
-		if foundUser != nil {
-			u.ID = foundUser.ID
-		} else {
-			row := db.QueryRow(
-				ctx,
-				`INSERT INTO users (name, email, stytch_id, farm_id) VALUES ($1, $2, $3, NULLIF($4, $5)) RETURNING id`,
-				u.Name,     // $1
-				u.Email,    // $2
-				u.StytchID, // $3
-				u.FarmID,   // $4
-				uuid.Nil,   // $5
-			)
-			return row.Scan(&u.ID)
-		}
+	if u.ID != uuid.Nil {
+		return fmt.Errorf("user already has an ID, use Update() method instead")
 	}
-	// Update existing user
+
+	row := db.QueryRow(
+		ctx,
+		`INSERT INTO users (name, email, stytch_id, farm_id) VALUES ($1, $2, $3, NULLIF($4, $5)) RETURNING id`,
+		u.Name,     // $1
+		u.Email,    // $2
+		u.StytchID, // $3
+		u.FarmID,   // $4
+		uuid.Nil,   // $5
+	)
+	return row.Scan(&u.ID)
+}
+
+func (u *User) Update(ctx context.Context, db *database.DB) error {
+	if u.ID == uuid.Nil {
+		return fmt.Errorf("user has no ID, use Save() method instead")
+	}
+
 	_, err := db.Exec(
 		ctx,
 		`UPDATE users SET name = $1, email = $2, farm_id = NULLIF($3, $4) WHERE id = $5`,

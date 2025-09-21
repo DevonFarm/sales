@@ -135,15 +135,25 @@ func (a *StytchAuth) sendMagicLink(db *database.DB) func(*fiber.Ctx) error {
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).SendString("failed to send magic link")
 		}
-
-		_, err = user.NewUser(c.Context(), db, u.Name, u.Email, res.UserID)
+		existingUser, err := user.GetUserByStytchID(c.Context(), db, res.UserID)
 		if err != nil {
 			return utils.LogAndRespondError(
 				c,
-				"failed to create user",
+				"failed to get user by stytch ID",
 				err,
 				fiber.StatusInternalServerError,
 			)
+		}
+		if existingUser == nil {
+			_, err = user.NewUser(c.Context(), db, u.Name, u.Email, res.UserID)
+			if err != nil {
+				return utils.LogAndRespondError(
+					c,
+					"failed to create user",
+					err,
+					fiber.StatusInternalServerError,
+				)
+			}
 		}
 
 		return c.Render(

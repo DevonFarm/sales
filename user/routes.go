@@ -53,17 +53,18 @@ func updateProfile(db *database.DB) func(*fiber.Ctx) error {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "user not found"})
 		}
 
-		// Parse form data
-		if err := c.BodyParser(user); err != nil {
-			return c.Status(fiber.StatusBadRequest).Render("templates/profile", fiber.Map{
-				"Title": "Edit Profile",
-				"User":  user,
-				"Error": "Invalid form data",
-			})
+		// Get specific form values to avoid overwriting unintended fields
+		name := c.FormValue("name")
+		email := c.FormValue("email")
+		if name != "" {
+			user.Name = name
+		}
+		if email != "" {
+			user.Email = email
 		}
 
 		// Save updated user
-		if err := user.Save(c.Context(), db); err != nil {
+		if err := user.Update(c.Context(), db); err != nil {
 			return c.Status(fiber.StatusInternalServerError).Render("templates/profile", fiber.Map{
 				"Title": "Edit Profile",
 				"User":  user,
