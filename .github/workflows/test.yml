@@ -27,6 +27,9 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-go-
     
+    - name: Install task runner
+      run: go install github.com/go-task/task/v3/cmd/task@latest
+    
     - name: Run unit tests
       run: task test-unit
     
@@ -93,6 +96,9 @@ jobs:
       uses: actions/setup-go@v5
       with:
         go-version: '1.25'
+    
+    - name: Install task runner
+      run: go install github.com/go-task/task/v3/cmd/task@latest
     
     - name: Run handler tests
       run: task test-handlers
