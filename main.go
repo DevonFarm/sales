@@ -7,6 +7,7 @@ import (
 	"github.com/DevonFarm/sales/farm"
 	"github.com/DevonFarm/sales/horse"
 	"github.com/DevonFarm/sales/server"
+	"github.com/DevonFarm/sales/user"
 )
 
 //go:embed templates assets
@@ -20,6 +21,7 @@ func runServer() error {
 
 	horse.RegisterRoutes(srvr.App, srvr.DB, srvr.Auth)
 	farm.RegisterRoutes(srvr.App, srvr.DB, srvr.Auth)
+	user.RegisterRoutes(srvr.App, srvr.DB, srvr.Auth.RequireAuth())
 
 	return srvr.Listen(":4242")
 }

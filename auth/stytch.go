@@ -194,6 +194,11 @@ func (a *StytchAuth) magicLinkCallback(db *database.DB) func(*fiber.Ctx) error {
 			return c.Status(fiber.StatusInternalServerError).SendString("user not found")
 		}
 
+		if u.Name == "" {
+			// No name yet, go to complete profile page
+			return c.Redirect(fmt.Sprintf("/user/%s/profile", u.ID))
+		}
+
 		if u.FarmID == uuid.Nil {
 			// No farm yet, go to create farm page
 			return c.Redirect(fmt.Sprintf("/new/farm/%s", u.ID))
