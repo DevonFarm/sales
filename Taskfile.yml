@@ -4,6 +4,7 @@ version: "3"
 
 vars:
   GREETING: Hello, World!
+  TEST_DATABASE_URL: '{{.TEST_DATABASE_URL | default "postgresql://root@localhost:26258/test_db?sslmode=disable"}}'
 
 dotenv: [".env"]
 
@@ -73,3 +74,171 @@ tasks:
           exit 1
         fi
         cockroach sql --url="$COCKROACH_DSN"
+
+  # Testing tasks
+  test:
+    desc: "Run unit tests (fast)"
+    cmds:
+      - task: test-unit
+
+  test-unit:
+    desc: "Run unit tests only"
+    cmds:
+      - echo "Running unit tests..."
+      - go test -v ./utils/... ./horse/... ./user/... ./farm/...
+
+  test-integration:
+    desc: "Run integration tests (requires TEST_DATABASE_URL)"
+    cmds:
+      - echo "Running integration tests..."
+      - |
+        if [ -z "$TEST_DATABASE_URL" ]; then
+          echo "Error: TEST_DATABASE_URL environment variable not set"
+          echo "Example: export TEST_DATABASE_URL='postgresql://root@localhost:26257/test_db?sslmode=disable'"
+          exit 1
+        fi
+      - go test -v ./tests/integration/...
+
+  test-handlers:
+    desc: "Run HTTP handler tests"
+    cmds:
+      - echo "Running HTTP handler tests..."
+      - go test -v ./tests/handlers/...
+
+  test-e2e:
+    desc: "Run end-to-end tests with Playwright"
+    cmds:
+      - echo "Running end-to-end tests..."
+      - cd tests/e2e && npm test
+
+  test-e2e-headed:
+    desc: "Run end-to-end tests with visible browser"
+    cmds:
+      - echo "Running end-to-end tests (headed)..."
+      - cd tests/e2e && npm run test:headed
+
+  test-e2e-ui:
+    desc: "Open Playwright UI for test development"
+    cmds:
+      - cd tests/e2e && npm run test:ui
+
+  test-all:
+    desc: "Run all Go tests"
+    cmds:
+      - task: test-unit
+      - task: test-integration
+      - task: test-handlers
+
+  # Setup tasks
+  setup-test-db:
+    desc: "Setup test database with Docker"
+    cmds:
+      - echo "Starting test database..."
+      - |
+        docker run -d --name devon-test-db \
+          -p 26258:26257 \
+          -e COCKROACH_DATABASE=test_db \
+          cockroachdb/cockroach:latest \
+          start-single-node --insecure
+      - echo "Waiting for database to be ready..."
+      - sleep 5
+      - echo "Running migrations..."
+      - |
+        export TEST_DATABASE_URL="postgresql://root@localhost:26258/test_db?sslmode=disable"
+        export MIGRATIONS_DSN="$TEST_DATABASE_URL"
+        task db-migrate
+      - echo "Test database ready at postgresql://root@localhost:26258/test_db"
+
+  setup-e2e:
+    desc: "Setup end-to-end test dependencies"
+    cmds:
+      - echo "Installing Playwright dependencies..."
+      - cd tests/e2e && npm install && npx playwright install
+
+  # Cleanup tasks
+  clean-test-db:
+    desc: "Remove test database container"
+    cmds:
+      - echo "Stopping and removing test database..."
+      - docker stop devon-test-db || true
+      - docker rm devon-test-db || true
+
+  clean:
+    desc: "Clean up test resources"
+    cmds:
+      - task: clean-test-db
+
+  # Development tasks
+  watch-unit:
+    desc: "Watch for changes and run unit tests"
+    cmds:
+      - echo "Watching for changes (unit tests)..."
+      - |
+        if command -v entr >/dev/null 2>&1; then
+          find . -name "*.go" -not -path "./tests/integration/*" -not -path "./tests/handlers/*" | entr -r task test-unit
+        else
+          echo "Error: 'entr' command not found. Install with: brew install entr"
+          exit 1
+        fi
+
+  watch-integration:
+    desc: "Watch for changes and run integration tests"
+    cmds:
+      - echo "Watching for changes (integration tests)..."
+      - |
+        if command -v entr >/dev/null 2>&1; then
+          find . -name "*.go" | entr -r task test-integration
+        else
+          echo "Error: 'entr' command not found. Install with: brew install entr"
+          exit 1
+        fi
+
+  # CI tasks
+  ci-test:
+    desc: "Run tests suitable for CI environment"
+    cmds:
+      - echo "Running CI tests..."
+      - task: test-unit
+      - |
+        if [ -n "$TEST_DATABASE_URL" ]; then
+          task test-integration
+        else
+          echo "Skipping integration tests (no TEST_DATABASE_URL)"
+        fi
+      - task: test-handlers
+
+  ci-setup:
+    desc: "Setup CI environment"
+    cmds:
+      - echo "Setting up CI environment..."
+      - echo "Installing task runner..."
+      - go install github.com/go-task/task/v3/cmd/task@latest
+      - echo "Installing go-migrate..."
+      - go install -tags 'postgres,cockroachdb' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+      - echo "Setting up E2E tests..."
+      - cd tests/e2e && npm ci && npx playwright install --with-deps
+
+  # Coverage tasks
+  coverage:
+    desc: "Run tests with coverage"
+    cmds:
+      - go test -coverprofile=coverage.out ./...
+      - go tool cover -html=coverage.out -o coverage.html
+
+  # Benchmark tasks
+  bench:
+    desc: "Run benchmarks"
+    cmds:
+      - go test -bench=. -benchmem ./...
+
+  # Example usage
+  example-test-setup:
+    desc: "Example of complete test setup"
+    cmds:
+      - echo "Example Complete test setup"
+      - echo "1. Start test database - task setup-test-db"
+      - echo "2. Set environment variable - export TEST_DATABASE_URL=postgresql://..."
+      - echo "3. Run all tests - task test-all"
+      - echo "4. Setup E2E tests - task setup-e2e"
+      - echo "5. Run E2E tests - task test-e2e"
+      - echo "6. Clean up - task clean"

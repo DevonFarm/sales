@@ -28,7 +28,7 @@ jobs:
           ${{ runner.os }}-go-
     
     - name: Run unit tests
-      run: make test-unit
+      run: task test-unit
     
     - name: Generate coverage report
       run: |
@@ -80,7 +80,7 @@ jobs:
     - name: Run integration tests
       env:
         TEST_DATABASE_URL: postgresql://root@localhost:26257/defaultdb?sslmode=disable
-      run: make test-integration
+      run: task test-integration
 
   handler-tests:
     name: HTTP Handler Tests
@@ -95,7 +95,7 @@ jobs:
         go-version: '1.25'
     
     - name: Run handler tests
-      run: make test-handlers
+      run: task test-handlers
 
   e2e-tests:
     name: End-to-End Tests
@@ -149,7 +149,7 @@ jobs:
         TEST_DATABASE_URL: postgresql://root@localhost:26257/defaultdb?sslmode=disable
         TEST_STYTCH_PROJECT_ID: ${{ secrets.TEST_STYTCH_PROJECT_ID }}
         TEST_STYTCH_SECRET: ${{ secrets.TEST_STYTCH_SECRET }}
-      run: make test-e2e
+      run: task test-e2e
     
     - name: Upload E2E test results
       uses: actions/upload-artifact@v3

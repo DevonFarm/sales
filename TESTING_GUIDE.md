@@ -6,20 +6,20 @@ This guide provides comprehensive instructions for testing the Devon Farm Sales 
 
 1. **Run Unit Tests** (fastest):
    ```bash
-   make test
+   task test
    ```
 
 2. **Setup Test Database and Run All Tests**:
    ```bash
-   make setup-test-db
+   task setup-test-db
    export TEST_DATABASE_URL="postgresql://root@localhost:26258/test_db?sslmode=disable"
-   make test-all
+   task test-all
    ```
 
 3. **Setup and Run E2E Tests**:
    ```bash
-   make setup-e2e
-   make test-e2e
+   task setup-e2e
+   task test-e2e
    ```
 
 ## Test Types and Coverage
@@ -27,7 +27,7 @@ This guide provides comprehensive instructions for testing the Devon Farm Sales 
 ### 1. Unit Tests ⚡ (Fast - ~100ms)
 **Purpose**: Test business logic in isolation
 **Location**: `*_test.go` files alongside source code
-**Command**: `make test-unit`
+**Command**: `task test-unit`
 
 **What's Tested**:
 - Horse age calculation and validation
@@ -45,7 +45,7 @@ This guide provides comprehensive instructions for testing the Devon Farm Sales 
 ### 2. Integration Tests 🔗 (Medium - ~1-5s)
 **Purpose**: Test database operations with real database
 **Location**: `tests/integration/`
-**Command**: `make test-integration`
+**Command**: `task test-integration`
 **Requires**: `TEST_DATABASE_URL` environment variable
 
 **What's Tested**:
@@ -64,7 +64,7 @@ This guide provides comprehensive instructions for testing the Devon Farm Sales 
 ### 3. HTTP Handler Tests 🌐 (Medium - ~100-500ms)
 **Purpose**: Test HTTP endpoints with mocked dependencies
 **Location**: `tests/handlers/`
-**Command**: `make test-handlers`
+**Command**: `task test-handlers`
 
 **What's Tested**:
 - Request parsing (JSON, form data, URL params)
@@ -82,7 +82,7 @@ This guide provides comprehensive instructions for testing the Devon Farm Sales 
 ### 4. End-to-End Tests 🎭 (Slow - ~5-30s per test)
 **Purpose**: Test complete user workflows in real browser
 **Location**: `tests/e2e/`
-**Command**: `make test-e2e`
+**Command**: `task test-e2e`
 **Requires**: Node.js, test database, Playwright
 
 **What's Tested**:
@@ -111,7 +111,7 @@ This guide provides comprehensive instructions for testing the Devon Farm Sales 
 #### Option 1: Docker (Recommended)
 ```bash
 # Start test database
-make setup-test-db
+task setup-test-db
 
 # Set environment variable
 export TEST_DATABASE_URL="postgresql://root@localhost:26258/test_db?sslmode=disable"
@@ -138,7 +138,7 @@ MIGRATIONS_DSN="$TEST_DATABASE_URL" task db-migrate
 ### E2E Test Setup
 ```bash
 # Install dependencies and browsers
-make setup-e2e
+task setup-e2e
 
 # Optional: Set test Stytch credentials
 export TEST_STYTCH_PROJECT_ID="your-test-project-id"
@@ -150,46 +150,46 @@ export TEST_STYTCH_SECRET="your-test-secret"
 ### Individual Test Types
 ```bash
 # Unit tests only (fastest)
-make test-unit
+task test-unit
 
 # Integration tests only
-make test-integration
+task test-integration
 
 # Handler tests only  
-make test-handlers
+task test-handlers
 
 # E2E tests only
-make test-e2e
+task test-e2e
 ```
 
 ### Combined Test Runs
 ```bash
 # All Go tests (unit + integration + handlers)
-make test-all
+task test-all
 
 # Everything including E2E
-make test-unit && make test-integration && make test-handlers && make test-e2e
+task test-unit && task test-integration && task test-handlers && task test-e2e
 ```
 
 ### Development Workflows
 ```bash
 # Watch for changes and re-run unit tests
-make watch-unit
+task watch-unit
 
 # Watch for changes and re-run integration tests
-make watch-integration
+task watch-integration
 
 # Run E2E tests with visible browser (for debugging)
-make test-e2e-headed
+task test-e2e-headed
 
 # Open Playwright UI for test development
-make test-e2e-ui
+task test-e2e-ui
 ```
 
 ### Coverage Reports
 ```bash
 # Generate coverage report
-make coverage
+task coverage
 
 # View coverage in browser
 open coverage.html
@@ -251,10 +251,10 @@ The project includes a comprehensive CI pipeline:
 ### Local CI Simulation
 ```bash
 # Run the same tests as CI
-make ci-test
+task ci-test
 
 # Setup CI environment locally
-make ci-setup
+task ci-setup
 ```
 
 ## Troubleshooting
@@ -276,7 +276,7 @@ psql "$TEST_DATABASE_URL" -c "\dt"
 #### E2E Test Failures
 ```bash
 # Run with visible browser
-make test-e2e-headed
+task test-e2e-headed
 
 # Check test output
 cat tests/e2e/test-results/*/stdout
@@ -300,7 +300,7 @@ go mod verify
 ### Performance Issues
 ```bash
 # Run benchmarks
-make bench
+task bench
 
 # Profile tests
 go test -cpuprofile cpu.prof -memprofile mem.prof ./...
@@ -338,9 +338,9 @@ go tool pprof cpu.prof
 
 ## Getting Help
 
-- **View Available Commands**: `make help`
+- **View Available Commands**: `task --list`
 - **Test Documentation**: Check README files in test directories
-- **Example Usage**: `make example-test-setup`
+- **Example Usage**: `task example-test-setup`
 - **CI Logs**: Check GitHub Actions for detailed error information
 
 This testing strategy provides comprehensive coverage while maintaining fast feedback loops for development. Start with unit tests for immediate feedback, then add integration and E2E tests for complete confidence in your changes.

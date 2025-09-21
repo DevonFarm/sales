@@ -66,7 +66,7 @@ I've successfully implemented a comprehensive testing strategy for your Go web a
 
 ### 1. Run Unit Tests (Immediate)
 ```bash
-make test-unit
+task test-unit
 # or
 go test -v ./utils/... ./horse/...
 ```
@@ -74,27 +74,27 @@ go test -v ./utils/... ./horse/...
 ### 2. Setup Integration Tests
 ```bash
 # Start test database
-make setup-test-db
+task setup-test-db
 
 # Set environment variable  
 export TEST_DATABASE_URL="postgresql://root@localhost:26258/test_db?sslmode=disable"
 
 # Run integration tests
-make test-integration
+task test-integration
 ```
 
 ### 3. Run Handler Tests
 ```bash
-make test-handlers
+task test-handlers
 ```
 
 ### 4. Setup E2E Tests
 ```bash
 # Install Playwright
-make setup-e2e
+task setup-e2e
 
 # Run E2E tests
-make test-e2e
+task test-e2e
 ```
 
 ## 📊 Testing Coverage
@@ -183,10 +183,10 @@ Ready for extension:
 
 ## 🚀 Next Steps
 
-1. **Try the unit tests**: `make test-unit` (works immediately)
-2. **Setup test database**: `make setup-test-db` 
+1. **Try the unit tests**: `task test-unit` (works immediately)
+2. **Setup test database**: `task setup-test-db` 
 3. **Configure authentication**: Choose your preferred auth testing approach
-4. **Run full test suite**: `make test-all`
+4. **Run full test suite**: `task test-all`
 5. **Setup CI/CD**: Commit the GitHub Actions workflow
 
 Your application now has a production-ready testing framework that addresses all the challenges of testing database operations, authentication, and HTML rendering. The multi-layer approach provides fast feedback during development while ensuring comprehensive coverage of your application's functionality.

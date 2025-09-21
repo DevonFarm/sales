@@ -22,7 +22,7 @@ func mustParseDate(dateStr string) time.Time {
 }
 
 // JSONRequest creates an HTTP request with JSON body
-func JSONRequest(method, url string, body interface{}) *httptest.Request {
+func JSONRequest(method, url string, body interface{}) *http.Request {
 	var bodyReader io.Reader
 	
 	if body != nil {
@@ -42,7 +42,7 @@ func JSONRequest(method, url string, body interface{}) *httptest.Request {
 }
 
 // FormRequest creates an HTTP request with form data
-func FormRequest(method, url string, formData map[string]string) *httptest.Request {
+func FormRequest(method, url string, formData map[string]string) *http.Request {
 	values := make([]string, 0, len(formData))
 	for key, value := range formData {
 		values = append(values, fmt.Sprintf("%s=%s", key, value))
@@ -56,13 +56,13 @@ func FormRequest(method, url string, formData map[string]string) *httptest.Reque
 }
 
 // ParseJSONResponse parses a JSON response body into a struct
-func ParseJSONResponse(resp *httptest.Response, dest interface{}) error {
+func ParseJSONResponse(resp *http.Response, dest interface{}) error {
 	defer resp.Body.Close()
 	return json.NewDecoder(resp.Body).Decode(dest)
 }
 
 // GetResponseBody reads the entire response body as a string
-func GetResponseBody(resp *httptest.Response) (string, error) {
+func GetResponseBody(resp *http.Response) (string, error) {
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -72,7 +72,7 @@ func GetResponseBody(resp *httptest.Response) (string, error) {
 }
 
 // AssertStatusCode checks if response has expected status code
-func AssertStatusCode(resp *httptest.Response, expected int) error {
+func AssertStatusCode(resp *http.Response, expected int) error {
 	if resp.StatusCode != expected {
 		body, _ := GetResponseBody(resp)
 		return fmt.Errorf("expected status %d, got %d. Body: %s", expected, resp.StatusCode, body)
@@ -81,7 +81,7 @@ func AssertStatusCode(resp *httptest.Response, expected int) error {
 }
 
 // AssertContains checks if response body contains expected string
-func AssertContains(resp *httptest.Response, expected string) error {
+func AssertContains(resp *http.Response, expected string) error {
 	body, err := GetResponseBody(resp)
 	if err != nil {
 		return fmt.Errorf("failed to read response body: %v", err)
@@ -113,20 +113,20 @@ func CreateTestApp() *fiber.App {
 }
 
 // WithCookie adds a cookie to the request
-func WithCookie(req *httptest.Request, name, value string) {
+func WithCookie(req *http.Request, name, value string) {
 	req.AddCookie(&http.Cookie{
 		Name:  name,
 		Value: value,
 	})
 }
 
-// TestResponse wraps httptest.Response with helper methods
+// TestResponse wraps http.Response with helper methods
 type TestResponse struct {
-	*httptest.Response
+	*http.Response
 }
 
 // NewTestResponse wraps a response with helper methods
-func NewTestResponse(resp *httptest.Response) *TestResponse {
+func NewTestResponse(resp *http.Response) *TestResponse {
 	return &TestResponse{Response: resp}
 }
 
