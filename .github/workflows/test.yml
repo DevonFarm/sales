@@ -48,17 +48,20 @@ jobs:
     name: Integration Tests
     runs-on: ubuntu-latest
     
-    services:
-      cockroachdb:
-        image: cockroachdb/cockroach:latest
-        ports:
-          - 26257:26257
-        options: --health-cmd="curl -f http://localhost:8080/health" --health-interval=10s --health-timeout=5s --health-retries=5
-        env:
-          COCKROACH_DATABASE: test_db
-    
     steps:
     - uses: actions/checkout@v4
+    
+    - name: Start CockroachDB
+      run: |
+        docker run -d --name cockroach \
+          -p 26257:26257 \
+          -p 8080:8080 \
+          cockroachdb/cockroach:latest \
+          start-single-node --insecure --listen-addr=0.0.0.0:26257 --http-addr=0.0.0.0:8080
+    
+    - name: Wait for CockroachDB
+      run: |
+        timeout 60 bash -c 'until curl -f http://localhost:8080/health; do sleep 2; done'
     
     - name: Set up Go
       uses: actions/setup-go@v5
@@ -70,10 +73,6 @@ jobs:
     
     - name: Install go-migrate
       run: go install -tags 'postgres,cockroachdb' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
-    
-    - name: Wait for CockroachDB
-      run: |
-        timeout 60 bash -c 'until curl -f http://localhost:8080/health; do sleep 2; done'
     
     - name: Run migrations
       env:
@@ -107,15 +106,20 @@ jobs:
     name: End-to-End Tests
     runs-on: ubuntu-latest
     
-    services:
-      cockroachdb:
-        image: cockroachdb/cockroach:latest
-        ports:
-          - 26257:26257
-        options: --health-cmd="curl -f http://localhost:8080/health" --health-interval=10s --health-timeout=5s --health-retries=5
-    
     steps:
     - uses: actions/checkout@v4
+    
+    - name: Start CockroachDB
+      run: |
+        docker run -d --name cockroach \
+          -p 26257:26257 \
+          -p 8080:8080 \
+          cockroachdb/cockroach:latest \
+          start-single-node --insecure --listen-addr=0.0.0.0:26257 --http-addr=0.0.0.0:8080
+    
+    - name: Wait for CockroachDB
+      run: |
+        timeout 60 bash -c 'until curl -f http://localhost:8080/health; do sleep 2; done'
     
     - name: Set up Go
       uses: actions/setup-go@v5
@@ -134,10 +138,6 @@ jobs:
     
     - name: Install go-migrate
       run: go install -tags 'postgres,cockroachdb' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
-    
-    - name: Wait for CockroachDB
-      run: |
-        timeout 60 bash -c 'until curl -f http://localhost:8080/health; do sleep 2; done'
     
     - name: Run migrations
       env:
