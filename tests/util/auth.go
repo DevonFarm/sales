@@ -1,17 +1,14 @@
-package testutil
+package util
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/google/uuid"
-	"github.com/stytchauth/stytch-go/v16/stytch/consumer/sessions"
-
-	"github.com/DevonFarm/sales/auth"
 	"github.com/DevonFarm/sales/database"
 	"github.com/DevonFarm/sales/user"
+	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 )
 
 // MockStytchAuth provides a mock authentication service for testing
@@ -38,17 +35,17 @@ func NewMockStytchAuth() *MockStytchAuth {
 // CreateMockSession creates a mock session for testing
 func (m *MockStytchAuth) CreateMockSession(userID string, user *user.User) string {
 	sessionToken := fmt.Sprintf("mock-session-%s-%d", userID, time.Now().Unix())
-	
+
 	m.sessions[sessionToken] = &MockSession{
 		SessionToken: sessionToken,
 		UserID:       userID,
 		ExpiresAt:    time.Now().Add(24 * time.Hour),
 	}
-	
+
 	if user != nil {
 		m.users[userID] = user
 	}
-	
+
 	return sessionToken
 }
 
@@ -58,11 +55,11 @@ func (m *MockStytchAuth) MockAuthenticate(sessionToken string) (*MockAuthRespons
 	if !exists {
 		return nil, fmt.Errorf("invalid session token")
 	}
-	
+
 	if time.Now().After(session.ExpiresAt) {
 		return nil, fmt.Errorf("session expired")
 	}
-	
+
 	return &MockAuthResponse{
 		SessionToken: session.SessionToken,
 		Session: &MockSessionData{
@@ -89,16 +86,16 @@ func (m *MockStytchAuth) RequireAuth() fiber.Handler {
 		if token == "" {
 			return c.Redirect("/login")
 		}
-		
+
 		authResp, err := m.MockAuthenticate(token)
 		if err != nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "unauthorized"})
 		}
-		
+
 		// Set user info in locals
 		c.Locals("stytch_session", authResp.Session)
 		c.Locals("stytch_user_id", authResp.Session.UserID)
-		
+
 		return c.Next()
 	}
 }
@@ -120,16 +117,16 @@ func NewAuthTestHelper(db *database.DB) *AuthTestHelper {
 // CreateAuthenticatedUser creates a user and returns session token for testing
 func (h *AuthTestHelper) CreateAuthenticatedUser(ctx context.Context, name, email string) (string, *user.User, error) {
 	stytchID := fmt.Sprintf("stytch-%s", uuid.New().String())
-	
+
 	// Create user in database
 	testUser, err := user.NewUser(ctx, h.db, name, email, stytchID)
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to create test user: %w", err)
 	}
-	
+
 	// Create mock session
 	sessionToken := h.mockAuth.CreateMockSession(stytchID, testUser)
-	
+
 	return sessionToken, testUser, nil
 }
 
@@ -160,7 +157,7 @@ func WithAuthentication(userID string, fn func(c *fiber.Ctx) error) fiber.Handle
 		// Set authentication context
 		c.Locals("stytch_user_id", userID)
 		c.Locals("stytch_session", &MockSessionData{UserID: userID})
-		
+
 		// Run the test function
 		return fn(c)
 	}
@@ -191,15 +188,15 @@ func NewMockStytchClient() *MockStytchClient {
 func (m *MockStytchClient) MockSendMagicLink(email string) (*MockMagicLink, error) {
 	userID := fmt.Sprintf("user-%s", uuid.New().String())
 	token := fmt.Sprintf("magic-token-%d", time.Now().Unix())
-	
+
 	link := &MockMagicLink{
 		Token:  token,
 		Email:  email,
 		UserID: userID,
 	}
-	
+
 	m.magicLinks[token] = link
-	
+
 	return link, nil
 }
 
@@ -209,17 +206,17 @@ func (m *MockStytchClient) MockAuthenticateMagicLink(token string) (*MockAuthRes
 	if !exists {
 		return nil, fmt.Errorf("invalid magic link token")
 	}
-	
+
 	sessionToken := fmt.Sprintf("session-%s-%d", link.UserID, time.Now().Unix())
-	
+
 	session := &MockSession{
 		SessionToken: sessionToken,
 		UserID:       link.UserID,
 		ExpiresAt:    time.Now().Add(24 * time.Hour),
 	}
-	
+
 	m.sessions[sessionToken] = session
-	
+
 	return &MockAuthResponse{
 		SessionToken: sessionToken,
 		Session: &MockSessionData{

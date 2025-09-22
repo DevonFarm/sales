@@ -1,4 +1,4 @@
-package testutil
+package util
 
 import (
 	"encoding/json"
@@ -24,7 +24,7 @@ func mustParseDate(dateStr string) time.Time {
 // JSONRequest creates an HTTP request with JSON body
 func JSONRequest(method, url string, body interface{}) *http.Request {
 	var bodyReader io.Reader
-	
+
 	if body != nil {
 		jsonData, err := json.Marshal(body)
 		if err != nil {
@@ -32,12 +32,12 @@ func JSONRequest(method, url string, body interface{}) *http.Request {
 		}
 		bodyReader = strings.NewReader(string(jsonData))
 	}
-	
+
 	req := httptest.NewRequest(method, url, bodyReader)
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
-	
+
 	return req
 }
 
@@ -47,11 +47,11 @@ func FormRequest(method, url string, formData map[string]string) *http.Request {
 	for key, value := range formData {
 		values = append(values, fmt.Sprintf("%s=%s", key, value))
 	}
-	
+
 	body := strings.Join(values, "&")
 	req := httptest.NewRequest(method, url, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	
+
 	return req
 }
 
@@ -86,11 +86,11 @@ func AssertContains(resp *http.Response, expected string) error {
 	if err != nil {
 		return fmt.Errorf("failed to read response body: %v", err)
 	}
-	
+
 	if !strings.Contains(body, expected) {
 		return fmt.Errorf("response body does not contain '%s'. Body: %s", expected, body)
 	}
-	
+
 	return nil
 }
 

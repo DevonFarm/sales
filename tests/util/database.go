@@ -1,9 +1,8 @@
-package testutil
+package util
 
 import (
 	"context"
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/google/uuid"
@@ -18,58 +17,57 @@ import (
 // TestDB wraps database connection with test utilities
 type TestDB struct {
 	*database.DB
-	cleanupFuncs []func() error
 }
 
 // NewTestDB creates a test database connection
-func NewTestDB(t *testing.T) *TestDB {
-	connString := os.Getenv("TEST_DATABASE_URL")
+func NewTestDB(connString string) (*TestDB, error) {
 	if connString == "" {
-		t.Skip("TEST_DATABASE_URL not set - skipping test")
+		return nil, fmt.Errorf("connString is empty")
 	}
 
 	db, err := database.NewDBConn(connString)
 	if err != nil {
-		t.Fatalf("Failed to connect to test database: %v", err)
+		return nil, fmt.Errorf("failed to connect to database: %v", err)
 	}
 
 	return &TestDB{
-		DB:           db,
-		cleanupFuncs: make([]func() error, 0),
-	}
-}
-
-// Cleanup runs all registered cleanup functions
-func (db *TestDB) Cleanup() error {
-	for _, cleanup := range db.cleanupFuncs {
-		if err := cleanup(); err != nil {
-			return err
-		}
-	}
-	return nil
+		DB: db,
+	}, nil
 }
 
 // CleanupOnExit registers cleanup to run when test exits
 func (db *TestDB) CleanupOnExit(t *testing.T) {
 	t.Cleanup(func() {
-		if err := db.Cleanup(); err != nil {
-			t.Errorf("Cleanup failed: %v", err)
-		}
 		db.Close(context.Background())
 	})
+}
+
+// CleanupTestDB drops and recreates the test database
+func (db *TestDB) CleanupTestDB(ctx context.Context) error {
+	// Drop the test database completely
+	_, err := db.Exec(ctx, "DROP DATABASE IF EXISTS dfsales_test")
+	if err != nil {
+		return fmt.Errorf("failed to drop test database: %w", err)
+	}
+
+	// Recreate the test database
+	_, err = db.Exec(ctx, "CREATE DATABASE dfsales_test")
+	if err != nil {
+		return fmt.Errorf("failed to create test database: %w", err)
+	}
+
+	return nil
 }
 
 // TruncateAllTables removes all data from test tables
 func (db *TestDB) TruncateAllTables(ctx context.Context) error {
 	tables := []string{"horses", "farms", "users"}
-	
 	for _, table := range tables {
 		_, err := db.Exec(ctx, fmt.Sprintf("TRUNCATE TABLE %s CASCADE", table))
 		if err != nil {
 			return fmt.Errorf("failed to truncate %s: %w", table, err)
 		}
 	}
-	
 	return nil
 }
 
@@ -101,12 +99,6 @@ func (f *TestFixtures) CreateTestUser(ctx context.Context, name, email, stytchID
 		return nil, err
 	}
 
-	// Register cleanup
-	f.db.cleanupFuncs = append(f.db.cleanupFuncs, func() error {
-		_, err := f.db.Exec(ctx, "DELETE FROM users WHERE id = $1", u.ID)
-		return err
-	})
-
 	return u, nil
 }
 
@@ -118,12 +110,6 @@ func (f *TestFixtures) CreateTestFarm(ctx context.Context, name string, userID u
 		return nil, err
 	}
 
-	// Register cleanup
-	f.db.cleanupFuncs = append(f.db.cleanupFuncs, func() error {
-		_, err := f.db.Exec(ctx, "DELETE FROM farms WHERE id = $1", testFarm.ID)
-		return err
-	})
-
 	return testFarm, nil
 }
 
@@ -133,12 +119,6 @@ func (f *TestFixtures) CreateTestHorse(ctx context.Context, h *horse.Horse) (*ho
 	if err != nil {
 		return nil, err
 	}
-
-	// Register cleanup
-	f.db.cleanupFuncs = append(f.db.cleanupFuncs, func() error {
-		_, err := f.db.Exec(ctx, "DELETE FROM horses WHERE id = $1", h.ID)
-		return err
-	})
 
 	return h, nil
 }
@@ -159,7 +139,6 @@ func (f *TestFixtures) CreateTestDataSet(ctx context.Context) (*TestDataSet, err
 
 	// Create horses
 	horses := make([]*horse.Horse, 0)
-	
 	stallion := &horse.Horse{
 		Name:        "Thunder",
 		Description: "A powerful stallion",
