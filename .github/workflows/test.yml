@@ -2,205 +2,117 @@ name: Test Suite
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 jobs:
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
-    
+
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.25'
-    
-    - name: Cache Go modules
-      uses: actions/cache@v4
-      with:
-        path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
-    
-    - name: Install task runner
-      run: go install github.com/go-task/task/v3/cmd/task@latest
-    
-    - name: Run unit tests
-      run: task test-unit
-    
-    - name: Generate coverage report
-      run: |
-        go test -coverprofile=coverage.out ./utils/... ./horse/... ./user/... ./farm/...
-        go tool cover -html=coverage.out -o coverage.html
-    
-    - name: Upload coverage to artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: coverage-report
-        path: coverage.html
+      - uses: actions/checkout@v4
+      - &setup-go
+        name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.25"
+      - &setup-task
+        name: Install task runner
+        uses: go-task/setup-task@v1
+
+      - name: Run unit tests
+        run: task test-unit
+
+      - name: Generate coverage report
+        run: |
+          go test -coverprofile=coverage.out ./utils/... ./horse/... ./user/... ./farm/...
+          go tool cover -html=coverage.out -o coverage.html
+
+      - name: Upload coverage to artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.html
 
   integration-tests:
     name: Integration Tests
     runs-on: ubuntu-latest
-    
+
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Start CockroachDB
-      run: |
-        docker run -d --name cockroach \
-          -p 26257:26257 \
-          -p 8080:8080 \
-          cockroachdb/cockroach:latest \
-          start-single-node --insecure --listen-addr=0.0.0.0:26257 --http-addr=0.0.0.0:8080
-    
-    - name: Wait for CockroachDB
-      run: |
-        timeout 60 bash -c 'until curl -f http://localhost:8080/health; do sleep 2; done'
-    
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.25'
-    
-    - name: Install task runner
-      run: go install github.com/go-task/task/v3/cmd/task@latest
-    
-    - name: Install go-migrate
-      run: go install -tags 'postgres,cockroachdb' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
-    
-    - name: Run migrations
-      env:
-        MIGRATIONS_DSN: postgresql://root@localhost:26257/defaultdb?sslmode=disable
-      run: task db-migrate
-    
-    - name: Run integration tests
-      env:
-        TEST_DATABASE_URL: postgresql://root@localhost:26257/defaultdb?sslmode=disable
-      run: task test-integration
+      - uses: actions/checkout@v4
+      - *setup-go
+      - *setup-task
+      - &setup-ci
+        name: Install go-migrate & db cert
+        run: task setup-ci
+
+      - &db-migrate
+        name: Run migrations
+        env:
+          MIGRATIONS_DSN: ${{ secrets.TEST_DATABASE_URL }}
+        run: |
+          # go-migrate needs to use cockroachdb, not postgres
+          export MIGRATIONS_DSN=${MIGRATIONS_DSN/postgres/cockroachdb}
+          task db-migrate
+
+      - name: Run integration tests
+        env:
+          TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+        run: task test-integration
 
   handler-tests:
     name: HTTP Handler Tests
     runs-on: ubuntu-latest
-    
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.25'
-    
-    - name: Install task runner
-      run: go install github.com/go-task/task/v3/cmd/task@latest
-    
-    - name: Run handler tests
-      run: task test-handlers
+      - uses: actions/checkout@v4
+      - *setup-go
+      - *setup-task
+      - name: Run handler tests
+        run: task test-handlers
 
   e2e-tests:
     name: End-to-End Tests
     runs-on: ubuntu-latest
-    
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Start CockroachDB
-      run: |
-        docker run -d --name cockroach \
-          -p 26257:26257 \
-          -p 8080:8080 \
-          cockroachdb/cockroach:latest \
-          start-single-node --insecure --listen-addr=0.0.0.0:26257 --http-addr=0.0.0.0:8080
-    
-    - name: Wait for CockroachDB
-      run: |
-        timeout 60 bash -c 'until curl -f http://localhost:8080/health; do sleep 2; done'
-    
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.25'
-    
-    - name: Set up Node.js
-      uses: actions/setup-node@v5
-      with:
-        node-version: '18'
-        cache: 'npm'
-        cache-dependency-path: tests/e2e/package-lock.json
-    
-    - name: Install task runner
-      run: go install github.com/go-task/task/v3/cmd/task@latest
-    
-    - name: Install go-migrate
-      run: go install -tags 'postgres,cockroachdb' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
-    
-    - name: Run migrations
-      env:
-        MIGRATIONS_DSN: postgresql://root@localhost:26257/defaultdb?sslmode=disable
-      run: task db-migrate
-    
-    - name: Install E2E test dependencies
-      run: |
-        cd tests/e2e
-        npm ci
-        npx playwright install --with-deps
-    
-    - name: Run E2E tests
-      env:
-        TEST_DATABASE_URL: postgresql://root@localhost:26257/defaultdb?sslmode=disable
-        TEST_STYTCH_PROJECT_ID: ${{ secrets.TEST_STYTCH_PROJECT_ID }}
-        TEST_STYTCH_SECRET: ${{ secrets.TEST_STYTCH_SECRET }}
-      run: task test-e2e
-    
-    - name: Upload E2E test results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: playwright-report
-        path: tests/e2e/playwright-report/
-        retention-days: 30
-
-  security-scan:
-    name: Security Scan
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.25'
-    
-    - name: Run Gosec Security Scanner
-      uses: securecodewarrior/github-action-gosec@v2
-      with:
-        args: '-no-fail -fmt sarif -out results.sarif ./...'
-    
-    - name: Upload SARIF file
-      uses: github/codeql-action/upload-sarif@v3
-      with:
-        sarif_file: results.sarif
+      - uses: actions/checkout@v4
+      - *setup-go
+      - *setup-task
+      - *setup-ci
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: tests/e2e/.node-version
+          cache: "npm"
+          cache-dependency-path: tests/e2e/package-lock.json
+      - *db-migrate
+      - name: Install E2E test dependencies
+        working-directory: tests/e2e
+        run: npm install
+      - name: Run E2E tests
+        working-directory: tests/e2e
+        env:
+          TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+          TEST_STYTCH_PROJECT_ID: ${{ secrets.TEST_STYTCH_PROJECT_ID }}
+          TEST_STYTCH_SECRET: ${{ secrets.TEST_STYTCH_SECRET }}
+        run: npm run test
+      - name: Upload E2E test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: tests/e2e/playwright-report/
+          retention-days: 30
 
   lint:
     name: Lint
     runs-on: ubuntu-latest
-    
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.25'
-    
-    - name: golangci-lint
-      uses: golangci/golangci-lint-action@v6
-      with:
-        version: latest
-        args: --timeout=5m
+      - uses: actions/checkout@v4
+      - *setup-go
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: latest
+          args: --timeout=5m
