@@ -37,7 +37,6 @@ tasks:
           exit 1
         fi
         URL="https://cockroachlabs.cloud/clusters/$COCKROACH_CLUSTER_ID/cert"
-        echo "URL=$URL"
         curl --create-dirs -o "$HOME/.postgresql/root.crt" "$URL"
   install-go-migrate:
     desc: "Install go-migrate"
@@ -88,7 +87,7 @@ tasks:
       - go test -v ./utils/... ./horse/... ./user/... ./farm/...
 
   test-integration:
-    desc: "Run integration tests (requires TEST_DATABASE_URL)"
+    desc: "Run integration tests (requires $TEST_DATABASE_URL to be set)"
     cmds:
       - echo "Running integration tests..."
       - |
@@ -129,16 +128,30 @@ tasks:
       - task: test-integration
       - task: test-handlers
 
-  # Cleanup tasks
-  clean-test-db:
-    desc: Drop and recreate test database
-    vars:
-      DB_NAME: dfsales_test
+  test-sql:
+    desc: "Open a SQL shell to the database identified by the $TEST_DATABASE_URL"
     cmds:
-      # TODO: add a flag to pass in a database name
-      - go run tests/util/cmd/main.go -clean-db
+      - |
+        if [ -z "$TEST_DATABASE_URL" ]; then
+          echo "Error: TEST_DATABASE_URL environment variable is not set"
+          exit 1
+        fi
+        cockroach sql --url="$TEST_DATABASE_URL"
 
-  clean:
-    desc: "Clean up test resources"
+  # Cleanup tasks
+  clean-db:*:
+    desc: "Drop and recreate test database. (usage: task clean-db:<database_name>)"
+    vars:
+      DB_NAME: "{{ index .MATCH 0 }}"
     cmds:
-      - task: clean-test-db
+      - |
+        export DB_NAME="{{.DB_NAME}}"
+        if [ "$DB_NAME" == "" ]; then
+          DB_NAME="dfsales_test_default"
+        fi
+        if [ -z "$TEST_DATABASE_URL" ]; then
+          echo "Error: TEST_DATABASE_URL environment variable not set"
+          echo "Example: export TEST_DATABASE_URL='postgresql://root@localhost:26257/test_db?sslmode=disable'"
+          exit 1
+        fi
+        go run tests/util/cmd/main.go -clean-db "${DB_NAME}"

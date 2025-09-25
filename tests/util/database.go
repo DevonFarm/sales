@@ -43,17 +43,17 @@ func (db *TestDB) CleanupOnExit(t *testing.T) {
 }
 
 // CleanupTestDB drops and recreates the test database
-func (db *TestDB) CleanupTestDB(ctx context.Context) error {
+func (db *TestDB) CleanupTestDB(ctx context.Context, dbName string) error {
 	// Drop the test database completely
-	_, err := db.Exec(ctx, "DROP DATABASE IF EXISTS dfsales_test")
+	_, err := db.Exec(ctx, "DROP DATABASE IF EXISTS "+dbName)
 	if err != nil {
-		return fmt.Errorf("failed to drop test database: %w", err)
+		return fmt.Errorf("failed to drop test database %s: %w", dbName, err)
 	}
 
 	// Recreate the test database
-	_, err = db.Exec(ctx, "CREATE DATABASE dfsales_test")
+	_, err = db.Exec(ctx, "CREATE DATABASE "+dbName)
 	if err != nil {
-		return fmt.Errorf("failed to create test database: %w", err)
+		return fmt.Errorf("failed to create test database %s: %w", dbName, err)
 	}
 
 	return nil

@@ -47,6 +47,8 @@ jobs:
       - &setup-ci
         name: Install go-migrate & db cert
         run: task setup-ci
+        env:
+          COCKROACH_CLUSTER_ID: ${{ vars.COCKROACH_CLUSTER_ID }}
 
       - &db-migrate
         name: Run migrations

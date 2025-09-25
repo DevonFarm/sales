@@ -27,13 +27,12 @@ func main() {
 		return db
 	}
 
-	// TODO: add a flag to pass in a database name
-	cleanDB := flag.Bool("clean-db", false, "clean the database")
+	cleanDB := flag.String("clean-db", "", "clean the specified database")
 	flag.Parse()
 
-	if *cleanDB {
-		if err := dbSetup().CleanupTestDB(context.Background()); err != nil {
-			log.Fatal("failed to clean database:", err)
+	if *cleanDB != "" {
+		if err := dbSetup().CleanupTestDB(context.Background(), *cleanDB); err != nil {
+			log.Fatalf("failed to clean database %s: %v", *cleanDB, err)
 		}
 		log.Println("database cleaned")
 		return
