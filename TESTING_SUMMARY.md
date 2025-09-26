@@ -163,13 +163,10 @@ Ready for extension:
 ### Start Here
 1. **Begin with unit tests** - Immediate value, no setup required
 2. **Add more handler tests** - Validate database operations through HTTP layer
-3. **Implement handler tests** - Ensure API contracts work
-4. **Configure E2E tests** - Complete user experience validation
+3. **Configure E2E tests** - Complete user experience validation
 
 ### Best Practices
 - Run unit tests during development for fast feedback
-- Use handler tests to validate database changes through HTTP requests
-- Leverage handler tests for API development
 - Reserve E2E tests for critical user workflows
 
 ### Maintenance
