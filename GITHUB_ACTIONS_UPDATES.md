@@ -25,11 +25,10 @@ Updated all GitHub Actions in the test pipeline to their latest versions to reso
 All 5 jobs in the pipeline have been updated:
 
 1. **unit-tests** - Fixed the failing `upload-artifact@v3` → `upload-artifact@v4`
-2. **integration-tests** - Updated `setup-go@v4` → `setup-go@v5`
-3. **handler-tests** - Updated `setup-go@v4` → `setup-go@v5`
-4. **e2e-tests** - Updated `setup-go@v4` → `setup-go@v5`, `setup-node@v4` → `setup-node@v5`, `upload-artifact@v3` → `upload-artifact@v4`
-5. **security-scan** - Updated `setup-go@v4` → `setup-go@v5`, `upload-sarif@v2` → `upload-sarif@v3`, `gosec@master` → `gosec@v2`
-6. **lint** - Updated `setup-go@v4` → `setup-go@v5`, `golangci-lint-action@v3` → `golangci-lint-action@v6`
+2. **handler-tests** - Updated `setup-go@v4` → `setup-go@v5`
+3. **e2e-tests** - Updated `setup-go@v4` → `setup-go@v5`, `setup-node@v4` → `setup-node@v5`, `upload-artifact@v3` → `upload-artifact@v4`
+4. **security-scan** - Updated `setup-go@v4` → `setup-go@v5`, `upload-sarif@v2` → `upload-sarif@v3`, `gosec@master` → `gosec@v2`
+5. **lint** - Updated `setup-go@v4` → `setup-go@v5`, `golangci-lint-action@v3` → `golangci-lint-action@v6`
 
 ## 🎯 Key Fix
 

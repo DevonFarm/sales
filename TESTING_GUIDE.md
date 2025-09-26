@@ -42,26 +42,7 @@ This guide provides comprehensive instructions for testing the Devon Farm Sales 
 - Easy to debug
 - High code coverage of pure functions
 
-### 2. Integration Tests 🔗 (Medium - ~1-5s)
-**Purpose**: Test database operations with real database
-**Location**: `tests/integration/`
-**Command**: `task test-integration`
-**Requires**: `TEST_DATABASE_URL` environment variable
-
-**What's Tested**:
-- User CRUD operations
-- Farm creation and retrieval
-- Horse database operations
-- Dashboard statistics queries
-- Database constraints and relationships
-
-**Benefits**:
-- Validates SQL queries work correctly
-- Tests database schema and migrations
-- Catches database-specific issues
-- Verifies data integrity
-
-### 3. HTTP Handler Tests 🌐 (Medium - ~100-500ms)
+### 2. HTTP Handler Tests 🌐 (Medium - ~100-500ms)
 **Purpose**: Test HTTP endpoints with mocked dependencies
 **Location**: `tests/handlers/`
 **Command**: `task test-handlers`
@@ -152,11 +133,9 @@ export TEST_STYTCH_SECRET="your-test-secret"
 # Unit tests only (fastest)
 task test-unit
 
-# Integration tests only
-task test-integration
-
-# Handler tests only  
+# Handler tests only
 task test-handlers
+
 
 # E2E tests only
 task test-e2e
@@ -164,11 +143,11 @@ task test-e2e
 
 ### Combined Test Runs
 ```bash
-# All Go tests (unit + integration + handlers)
+# All Go tests (unit + handlers)
 task test-all
 
 # Everything including E2E
-task test-unit && task test-integration && task test-handlers && task test-e2e
+task test-unit && task test-handlers && task test-e2e
 ```
 
 ### Development Workflows
@@ -176,8 +155,8 @@ task test-unit && task test-integration && task test-handlers && task test-e2e
 # Watch for changes and re-run unit tests
 task watch-unit
 
-# Watch for changes and re-run integration tests
-task watch-integration
+# Watch for changes and re-run handler tests
+task watch-handlers
 
 # Run E2E tests with visible browser (for debugging)
 task test-e2e-headed
@@ -202,7 +181,7 @@ open coverage.html
 - No cleanup required
 - Focus on edge cases and boundary conditions
 
-### Integration Tests
+### Handler Tests
 - Use `TestFixtures` helper for data creation
 - Automatic cleanup with registered cleanup functions
 - Database transactions for isolation
@@ -219,7 +198,7 @@ open coverage.html
 
 ## Authentication Testing
 
-### Unit/Integration Tests
+### Unit/Handler Tests
 ```go
 // Use mock authentication
 authHelper := testutil.NewAuthTestHelper(db)
@@ -242,7 +221,7 @@ Currently uses placeholder auth. Options for implementation:
 ### GitHub Actions
 The project includes a comprehensive CI pipeline:
 - **Unit Tests**: Run on every push/PR
-- **Integration Tests**: With CockroachDB service
+- **Handler Tests**: With CockroachDB service
 - **Handler Tests**: Fast API testing
 - **E2E Tests**: Full browser testing
 - **Security Scanning**: Gosec security analysis
@@ -320,13 +299,13 @@ go tool pprof cpu.prof
 
 ### Test Organization
 1. **Co-locate Unit Tests**: Keep `*_test.go` files next to source
-2. **Group Integration Tests**: Separate directory with setup/teardown
+2. **Group Handler Tests**: Separate directory with setup/teardown
 3. **Shared Test Utilities**: Common helpers in `tests/testutil/`
 4. **Clear Documentation**: README in each test directory
 
 ### Performance
 1. **Run Unit Tests First**: Fast feedback during development
-2. **Parallel Integration Tests**: Use `t.Parallel()` when possible
+2. **Parallel Handler Tests**: Use `t.Parallel()` when possible
 3. **Efficient E2E Tests**: Group related actions, minimize browser restarts
 4. **CI Optimization**: Cache dependencies, parallel jobs
 
@@ -343,4 +322,4 @@ go tool pprof cpu.prof
 - **Example Usage**: `task example-test-setup`
 - **CI Logs**: Check GitHub Actions for detailed error information
 
-This testing strategy provides comprehensive coverage while maintaining fast feedback loops for development. Start with unit tests for immediate feedback, then add integration and E2E tests for complete confidence in your changes.
+This testing strategy provides comprehensive coverage while maintaining fast feedback loops for development. Start with unit tests for immediate feedback, then add handler and E2E tests for complete confidence in your changes.

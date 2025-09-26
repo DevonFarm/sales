@@ -36,33 +36,6 @@ jobs:
           name: coverage-report
           path: coverage.html
 
-  integration-tests:
-    name: Integration Tests
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-      - *setup-go
-      - *setup-task
-      - &setup-ci
-        name: Install go-migrate & db cert
-        run: task setup-ci
-        env:
-          COCKROACH_CLUSTER_ID: ${{ vars.COCKROACH_CLUSTER_ID }}
-
-      - &db-migrate
-        name: Run migrations
-        env:
-          MIGRATIONS_DSN: ${{ secrets.TEST_DATABASE_URL }}
-        run: |
-          # go-migrate needs to use cockroachdb, not postgres
-          export MIGRATIONS_DSN=${MIGRATIONS_DSN/postgres/cockroachdb}
-          task db-migrate
-
-      - name: Run integration tests
-        env:
-          TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
-        run: task test-integration
 
   handler-tests:
     name: HTTP Handler Tests

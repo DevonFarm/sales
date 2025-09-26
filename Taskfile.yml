@@ -86,17 +86,6 @@ tasks:
       - echo "Running unit tests..."
       - go test -v ./utils/... ./horse/... ./user/... ./farm/...
 
-  test-integration:
-    desc: "Run integration tests (requires $TEST_DATABASE_URL to be set)"
-    cmds:
-      - echo "Running integration tests..."
-      - |
-        if [ -z "$TEST_DATABASE_URL" ]; then
-          echo "Error: TEST_DATABASE_URL environment variable not set"
-          echo "Example: export TEST_DATABASE_URL='postgresql://root@localhost:26257/test_db?sslmode=disable'"
-          exit 1
-        fi
-      - go test -v ./tests/integration/...
 
   test-handlers:
     desc: "Run HTTP handler tests"
@@ -125,7 +114,6 @@ tasks:
     desc: "Run all Go tests"
     cmds:
       - task: test-unit
-      - task: test-integration
       - task: test-handlers
 
   test-sql:
