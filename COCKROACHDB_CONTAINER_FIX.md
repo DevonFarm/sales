@@ -2,7 +2,7 @@
 
 ## Problem Fixed
 
-The integration and e2e test jobs were failing with this error:
+The handler and e2e test jobs were failing with this error:
 ```log
 /cockroach/cockroach.sh: line 278: 1: error: mode unset, can be shell, bash, or cockroach command   (start-single-node, sql, etc.)
 ```
@@ -48,7 +48,7 @@ steps:
 
 **Both jobs that use CockroachDB were fixed:**
 
-### 1. **integration-tests** Job
+### 1. **handler-tests** Job
 - ✅ Replaced `services` with manual Docker container step
 - ✅ Added proper `start-single-node` command
 - ✅ Added health check wait step
@@ -73,7 +73,7 @@ steps:
 - ✅ CockroachDB containers will start successfully
 - ✅ No more "mode unset" errors
 - ✅ Database will be ready for migrations and tests
-- ✅ Integration tests can connect to the database
+- ✅ Handler tests can connect to the database
 - ✅ E2E tests can connect to the database
 
 ## 📝 Technical Details

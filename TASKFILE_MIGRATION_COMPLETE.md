@@ -9,7 +9,7 @@ Successfully migrated all testing tasks from Makefile to your existing Taskfile.
 ### **Testing Tasks**
 - `task test` - Run unit tests (fast)
 - `task test-unit` - Run unit tests only  
-- `task test-integration` - Run integration tests (requires TEST_DATABASE_URL)
+- `task test-handlers` - Run HTTP handler tests
 - `task test-handlers` - Run HTTP handler tests
 - `task test-e2e` - Run end-to-end tests with Playwright
 - `task test-e2e-headed` - Run E2E tests with visible browser
@@ -26,7 +26,7 @@ Successfully migrated all testing tasks from Makefile to your existing Taskfile.
 
 ### **Development Tasks**
 - `task watch-unit` - Watch for changes and run unit tests
-- `task watch-integration` - Watch for changes and run integration tests
+- `task watch-handlers` - Watch for changes and run handler tests
 
 ### **CI Tasks**
 - `task ci-test` - Run tests suitable for CI environment
@@ -60,10 +60,10 @@ Successfully migrated all testing tasks from Makefile to your existing Taskfile.
 # Run unit tests (works immediately)
 task test-unit
 
-# Setup test database and run integration tests
+# Setup test database and run handler tests
 task setup-test-db
 export TEST_DATABASE_URL="postgresql://root@localhost:26258/test_db?sslmode=disable"
-task test-integration
+task test-handlers
 
 # Run handler tests
 task test-handlers
@@ -106,7 +106,7 @@ All documentation now uses Task commands:
 Your comprehensive testing framework is now fully integrated with Task:
 
 - **Fast Unit Tests** - Immediate feedback during development
-- **Database Integration Tests** - Real database testing
+- **Database Handler Tests** - Real database testing through HTTP layer
 - **HTTP Handler Tests** - API endpoint validation  
 - **End-to-End Tests** - Complete user workflow testing
 - **CI/CD Pipeline** - Automated testing on every push

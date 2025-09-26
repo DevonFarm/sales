@@ -22,12 +22,12 @@ Added `task` installation step to all jobs that use task commands.
   run: task test-unit
 ```
 
-### 2. **integration-tests** Job
+### 2. **handler-tests** Job
 ```yaml
 - name: Install task runner
   run: go install github.com/go-task/task/v3/cmd/task@latest
 
-# Uses: task db-migrate, task test-integration
+# Uses: task db-migrate, task test-handlers
 ```
 
 ### 3. **handler-tests** Job
@@ -58,10 +58,10 @@ Added `task` installation step to all jobs that use task commands.
 
 All jobs should now run successfully:
 - ✅ `task test-unit` will work in unit-tests job
-- ✅ `task test-integration` will work in integration-tests job  
+- ✅ `task test-handlers` will work in handler-tests job  
 - ✅ `task test-handlers` will work in handler-tests job
 - ✅ `task test-e2e` will work in e2e-tests job
-- ✅ `task db-migrate` will work in integration-tests and e2e-tests jobs
+- ✅ `task db-migrate` will work in handler-tests and e2e-tests jobs
 
 ## 📝 Notes
 

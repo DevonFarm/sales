@@ -12,8 +12,6 @@ I've successfully implemented a comprehensive testing strategy for your Go web a
 - **Examples**: Horse age calculation, gender validation, date parsing
 - **Status**: ✅ Working and passing
 
-#### 2. **Integration Tests** 🔗 (Medium - ~1-5s)  
-- **Location**: `tests/integration/`
 - **Coverage**: Database CRUD operations, constraints, relationships
 - **Features**: Automatic cleanup, test fixtures, transaction support
 - **Status**: ✅ Ready (requires test database)
@@ -45,13 +43,13 @@ I've successfully implemented a comprehensive testing strategy for your Go web a
 ## 🎯 Key Features Addressing Your Concerns
 
 ### Database Testing Challenges ✅ **SOLVED**
-- **Integration tests** with real CockroachDB instance
+- **Handler tests** with real CockroachDB instance
 - **Test fixtures** for easy data setup and cleanup
 - **Transaction isolation** for test independence
 - **Mock database** for fast handler testing
 
 ### Authentication Testing Challenges ✅ **SOLVED**
-- **Mock Stytch service** for unit/integration tests
+- **Mock Stytch service** for unit/handler tests
 - **Authentication bypass** for handler testing
 - **Playwright framework** ready for full auth flows
 - **Session management** testing utilities
@@ -71,7 +69,7 @@ task test-unit
 go test -v ./utils/... ./horse/...
 ```
 
-### 2. Setup Integration Tests
+### 2. Setup Handler Tests
 ```bash
 # Start test database
 task setup-test-db
@@ -79,8 +77,8 @@ task setup-test-db
 # Set environment variable  
 export TEST_DATABASE_URL="postgresql://root@localhost:26258/test_db?sslmode=disable"
 
-# Run integration tests
-task test-integration
+# Run handler tests
+task test-handlers
 ```
 
 ### 3. Run Handler Tests
@@ -102,7 +100,7 @@ task test-e2e
 | Test Type | Speed | Dependencies | Coverage |
 |-----------|-------|--------------|----------|
 | **Unit** | ⚡ Fast | None | Business logic, utilities |
-| **Integration** | 🔄 Medium | Test DB | Database operations, queries |
+| **Handler** | 🔄 Medium | Test DB | HTTP handlers, database operations |
 | **Handler** | 🔄 Medium | Mocks | HTTP endpoints, validation |
 | **E2E** | 🐌 Slow | Browser + DB | Complete user workflows |
 
@@ -165,13 +163,13 @@ Ready for extension:
 
 ### Start Here
 1. **Begin with unit tests** - Immediate value, no setup required
-2. **Add integration tests** - Validate database operations
+2. **Add more handler tests** - Validate database operations through HTTP layer
 3. **Implement handler tests** - Ensure API contracts work
 4. **Configure E2E tests** - Complete user experience validation
 
 ### Best Practices
 - Run unit tests during development for fast feedback
-- Use integration tests to validate database changes
+- Use handler tests to validate database changes through HTTP requests
 - Leverage handler tests for API development
 - Reserve E2E tests for critical user workflows
 

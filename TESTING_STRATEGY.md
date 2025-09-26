@@ -19,9 +19,6 @@ This Go web application presents unique testing challenges due to its heavy inte
 - Template path generation
 - Input parsing and validation
 
-### 2. Integration Tests (Go) - Database Operations
-**Purpose**: Test database interactions with real database
-**Location**: `tests/integration/`
 **Coverage**:
 - CRUD operations for all models
 - Database migrations
@@ -81,7 +78,7 @@ This Go web application presents unique testing challenges due to its heavy inte
 ## Implementation Priority
 
 1. **Start with Unit Tests** - Quick wins, build testing habits
-2. **Add Integration Tests** - Validate database layer reliability  
+2. **Database Layer Testing** - Handled through handler tests with database interactions  
 3. **HTTP Handler Tests** - Ensure API contracts work
 4. **Playwright E2E Tests** - Validate complete user experience
 
@@ -102,7 +99,7 @@ This Go web application presents unique testing challenges due to its heavy inte
 ## Benefits of This Approach
 
 1. **Fast Feedback Loop**: Unit tests run in milliseconds
-2. **Reliable Database Testing**: Integration tests catch SQL issues
+2. **Reliable Database Testing**: Handler tests with database interactions catch SQL issues
 3. **API Contract Validation**: Handler tests ensure HTTP layer works
 4. **User Experience Validation**: E2E tests validate the actual user flows
 5. **Maintainable**: Clear separation of concerns and test types
@@ -111,7 +108,7 @@ This Go web application presents unique testing challenges due to its heavy inte
 ## Getting Started
 
 1. Set up basic unit tests for utility functions
-2. Configure test database and integration test framework
+2. Configure test database for handler and e2e tests
 3. Add HTTP handler tests with mocked dependencies
 4. Set up Playwright for critical user flows
 5. Gradually increase coverage in each layer
