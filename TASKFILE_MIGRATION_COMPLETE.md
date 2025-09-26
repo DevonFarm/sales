@@ -10,7 +10,6 @@ Successfully migrated all testing tasks from Makefile to your existing Taskfile.
 - `task test` - Run unit tests (fast)
 - `task test-unit` - Run unit tests only  
 - `task test-handlers` - Run HTTP handler tests
-- `task test-handlers` - Run HTTP handler tests
 - `task test-e2e` - Run end-to-end tests with Playwright
 - `task test-e2e-headed` - Run E2E tests with visible browser
 - `task test-e2e-ui` - Open Playwright UI for test development
