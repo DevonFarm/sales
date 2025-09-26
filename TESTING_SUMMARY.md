@@ -100,8 +100,7 @@ task test-e2e
 | Test Type | Speed | Dependencies | Coverage |
 |-----------|-------|--------------|----------|
 | **Unit** | ⚡ Fast | None | Business logic, utilities |
-| **Handler** | 🔄 Medium | Test DB | HTTP handlers, database operations |
-| **Handler** | 🔄 Medium | Mocks | HTTP endpoints, validation |
+| **Handler** | 🔄 Medium | Test DB/Mocks | HTTP endpoints, database operations, validation |
 | **E2E** | 🐌 Slow | Browser + DB | Complete user workflows |
 
 ## 🎉 Benefits You Get
