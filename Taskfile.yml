@@ -2,22 +2,23 @@
 
 version: "3"
 
-vars:
-  GREETING: Hello, World!
-
 dotenv: [".env"]
 
 tasks:
   default:
-    desc: "Greet the world"
+    desc: List the available tasks
     cmds:
-      - echo "{{.GREETING}}"
+      - task --list
     silent: true
-  setup:
-    desc: "Setup the project workspace"
+  setup-ci:
+    desc: "Setup CI environment"
     cmds:
       - task: install-db-cert
       - task: install-go-migrate
+  setup:
+    desc: "Setup the project workspace"
+    cmds:
+      - task: setup-ci
       - |
         if ! command -v brew >/dev/null 2>&1; then
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -36,7 +37,6 @@ tasks:
           exit 1
         fi
         URL="https://cockroachlabs.cloud/clusters/$COCKROACH_CLUSTER_ID/cert"
-        echo "URL=$URL"
         curl --create-dirs -o "$HOME/.postgresql/root.crt" "$URL"
   install-go-migrate:
     desc: "Install go-migrate"
@@ -73,3 +73,73 @@ tasks:
           exit 1
         fi
         cockroach sql --url="$COCKROACH_DSN"
+
+  # Testing tasks
+  test:
+    desc: "Run unit tests (fast)"
+    cmds:
+      - task: test-unit
+
+  test-unit:
+    desc: "Run unit tests only"
+    cmds:
+      - echo "Running unit tests..."
+      - go test -v ./utils/... ./horse/... ./user/... ./farm/...
+
+
+  test-handlers:
+    desc: "Run HTTP handler tests"
+    cmds:
+      - echo "Running HTTP handler tests..."
+      - go test -v ./tests/handlers/...
+
+  test-e2e:
+    desc: "Run end-to-end tests with Playwright"
+    cmds:
+      - echo "Running end-to-end tests..."
+      - cd tests/e2e && npm test
+
+  test-e2e-headed:
+    desc: "Run end-to-end tests with visible browser"
+    cmds:
+      - echo "Running end-to-end tests (headed)..."
+      - cd tests/e2e && npm run test:headed
+
+  test-e2e-ui:
+    desc: "Open Playwright UI for test development"
+    cmds:
+      - cd tests/e2e && npm run test:ui
+
+  test-all:
+    desc: "Run all Go tests"
+    cmds:
+      - task: test-unit
+      - task: test-handlers
+
+  test-sql:
+    desc: "Open a SQL shell to the database identified by the $TEST_DATABASE_URL"
+    cmds:
+      - |
+        if [ -z "$TEST_DATABASE_URL" ]; then
+          echo "Error: TEST_DATABASE_URL environment variable is not set"
+          exit 1
+        fi
+        cockroach sql --url="$TEST_DATABASE_URL"
+
+  # Cleanup tasks
+  clean-db:*:
+    desc: "Drop and recreate test database. (usage: task clean-db:<database_name>)"
+    vars:
+      DB_NAME: "{{ index .MATCH 0 }}"
+    cmds:
+      - |
+        export DB_NAME="{{.DB_NAME}}"
+        if [ "$DB_NAME" == "" ]; then
+          DB_NAME="dfsales_test_default"
+        fi
+        if [ -z "$TEST_DATABASE_URL" ]; then
+          echo "Error: TEST_DATABASE_URL environment variable not set"
+          echo "Example: export TEST_DATABASE_URL='postgresql://root@localhost:26257/test_db?sslmode=disable'"
+          exit 1
+        fi
+        go run tests/util/cmd/main.go -clean-db "${DB_NAME}"
