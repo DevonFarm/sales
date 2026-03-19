@@ -5,3 +5,5 @@ output/
 tmp/
 
 .env
+
+node_modules/
