@@ -3,6 +3,7 @@
 ## Problem Fixed
 
 The handler and e2e test jobs were failing with this error:
+
 ```log
 /cockroach/cockroach.sh: line 278: 1: error: mode unset, can be shell, bash, or cockroach command   (start-single-node, sql, etc.)
 ```
@@ -10,6 +11,7 @@ The handler and e2e test jobs were failing with this error:
 ## Root Cause
 
 The error occurred because:
+
 1. **GitHub Actions Services Limitation**: The `services` configuration in GitHub Actions doesn't easily allow overriding the container's default command/entrypoint
 2. **CockroachDB Requirement**: The CockroachDB container requires a specific command (`start-single-node`) to be passed when starting
 3. **Missing Command**: The service was starting without the required `start-single-node` command, causing the "mode unset" error
@@ -18,7 +20,8 @@ The error occurred because:
 
 **Replaced GitHub Actions services with manual Docker container steps:**
 
-### Before (Problematic):
+### Before (Problematic)
+
 ```yaml
 services:
   cockroachdb:
@@ -28,7 +31,8 @@ services:
     options: --health-cmd="curl -f http://localhost:8080/health" --health-interval=10s --health-timeout=5s --health-retries=5
 ```
 
-### After (Fixed):
+### After (Fixed)
+
 ```yaml
 steps:
 - name: Start CockroachDB
@@ -49,12 +53,14 @@ steps:
 **Both jobs that use CockroachDB were fixed:**
 
 ### 1. **handler-tests** Job
+
 - ✅ Replaced `services` with manual Docker container step
 - ✅ Added proper `start-single-node` command
 - ✅ Added health check wait step
 - ✅ Moved wait step before Go setup for proper sequencing
 
 ### 2. **e2e-tests** Job  
+
 - ✅ Replaced `services` with manual Docker container step
 - ✅ Added proper `start-single-node` command
 - ✅ Added health check wait step
@@ -63,7 +69,7 @@ steps:
 ## 🎯 Key Improvements
 
 1. **Explicit Command**: CockroachDB now starts with the required `start-single-node --insecure` command
-2. **Proper Networking**: Added both ports 26257 (SQL) and 8080 (HTTP admin) 
+2. **Proper Networking**: Added both ports 26257 (SQL) and 8080 (HTTP admin)
 3. **Health Checking**: Maintained the health check but moved it to a separate step
 4. **Better Sequencing**: Database starts and becomes ready before other setup steps
 5. **More Control**: Full control over container startup parameters
@@ -79,6 +85,7 @@ steps:
 ## 📝 Technical Details
 
 **Container Command:**
+
 ```bash
 docker run -d --name cockroach \
   -p 26257:26257 \        # SQL port
@@ -88,6 +95,7 @@ docker run -d --name cockroach \
 ```
 
 **Health Check:**
+
 ```bash
 timeout 60 bash -c 'until curl -f http://localhost:8080/health; do sleep 2; done'
 ```
